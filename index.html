@@ -202,6 +202,8 @@
   .sheetbox .btns .main{background:var(--pink);color:#fff;border-color:var(--pink);}
 
   /* ===== v3 ===== */
+  #motive{background:linear-gradient(135deg,#fdf2f8,#ede9fe 60%,#e0f2fe);border:2px solid #f9a8d4;} #motive b{font-size:16px;}
+  .says{display:block;margin-top:8px;padding-top:8px;border-top:1px dashed #f9a8d4;font-style:italic;color:#6b2145;font-size:13px;}
   #tools{display:flex;gap:7px;margin:10px 14px 0;overflow-x:auto;scrollbar-width:none;}
   #tools button{flex:1;white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--shadow);}
   #tools button.on{background:var(--pink);color:#fff;}
@@ -362,7 +364,7 @@
 <div id="toast"></div>
 <div id="banner"></div>
 <button id="undo">↩ Undo</button>
-<div id="crave"><h2>Breathe. This craving will pass 💗</h2><div class="orb"></div><div id="cvT" class="t">2:00</div><p style="margin:0;max-width:280px">Breathe in as it grows, out as it shrinks. Chew one gum slowly if you need to.</p>
+<div id="crave"><h2>Breathe. This craving will pass 💗</h2><div class="orb"></div><div id="cvT" class="t">2:00</div><p id="cvWhy" style="margin:0;max-width:290px;font-weight:800;font-size:16px"></p><p style="margin:0;max-width:280px">Breathe in as it grows, out as it shrinks. Chew one gum slowly if you need to.</p>
   <div><button id="cvGum">+1 gum</button><button id="cvDone">I did it 💪</button></div></div>
 <div id="more" class="sheetx"></div>
 <div id="lvl"></div>
@@ -709,10 +711,10 @@ function checkMilestone(){
     lastCelebrated = s.streak;
     try { localStorage.setItem('jaanu_last_celebrated', String(s.streak)); } catch(e){}
     const box = document.getElementById('celebrate');
-    box.innerHTML = '🎉 ' + MILESTONES[s.streak] + '<small>Tap the card and keep the streak alive tomorrow too.</small>';
+    box.innerHTML = '🎉 ' + MILESTONES[s.streak] + '<small>' + ((meta.love || {})[s.streak] ? '💌 ' + meta.love[s.streak] : 'Tap the card and keep the streak alive tomorrow too.') + '</small>'; speak(((meta.love || {})[s.streak]) || 'Amazing! Another milestone reached.');
     box.style.display = 'block';
     confetti();
-    setTimeout(() => { box.style.display = 'none'; }, 9000);
+    setTimeout(() => { box.style.display = 'none'; }, 15000);
   }
 }
 function confetti(){
@@ -829,9 +831,10 @@ function setMotive(){
   let main;
   if (t > LAST_ISO) main = '🏆 Journey complete — so proud of you both!';
   else if (done === 4) main = '⭐ Today is won! Rest well, Jaanu 💗';
+  else if (s.streak >= 1 && new Date().getHours() >= 18) main = '⚠️ Don\'t break your ' + s.streak + '-day chain — ' + (4 - done) + ' box(es) left today!';
   else if (s.streak >= 3) main = '🔥 ' + s.streak + ' days in a row — protect the streak today!';
   else main = pick(['💗 Every perfect day is a step closer. You have got this!','🌱 Slow and steady — one day, one level.','🎯 Four boxes = one star. Start with the easiest!'], dn);
-  el.innerHTML = '<b>' + main + '</b><span>' + (done < 4 ? (4 - done) + ' box' + (4 - done > 1 ? 'es' : '') + ' left today · ' : '') + need + ' perfect day' + (need > 1 ? 's' : '') + ' to reach ' + nxt + '</span>' + nextRewardHTML(s);
+  el.innerHTML = '<b>' + main + '</b><span>' + (done < 4 ? (4 - done) + ' box' + (4 - done > 1 ? 'es' : '') + ' left today · ' : '') + need + ' perfect day' + (need > 1 ? 's' : '') + ' to reach ' + nxt + '</span>' + nextRewardHTML(s) + quoteHTML(dn);
 }
 
 /* ---- level complete + progress hooks ---- */
@@ -844,7 +847,7 @@ function afterChange(iso, wasPerfect){
 function levelComplete(iso){
   const n = dayNoOf(new Date(iso + 'T00:00:00')), ov = document.getElementById('lvl');
   ov.innerHTML = '<div class="lvlbox"><div class="lvlt">Level ' + n + ' complete!</div><div class="lvlstars"><span>⭐</span><span>⭐</span><span>⭐</span></div><div class="lvlm">' + pick(WIN_MSGS, n) + rewardLine() + '</div><button id="lvlGo">Next level ▶</button></div>';
-  ov.classList.add('show'); confetti(); chime(); sendEvent('win', 'finished Level ' + n + ' ⭐'); try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch(e){}
+  ov.classList.add('show'); confetti(); starPings(); speak(pick(WIN_SPEAK, n)); sendEvent('win', 'finished Level ' + n + ' ⭐'); try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch(e){}
   let gone = false;
   const go = () => {
     if (gone) return; gone = true; ov.classList.remove('show');
@@ -891,7 +894,7 @@ function tickReminders(){
     noti.fired = Object.fromEntries(Object.entries(noti.fired).filter(([x]) => x.startsWith(t))); noti.fired[key] = 1; saveNoti();
     const left = missingList(t).length, s = computeStats();
     if (k === 'am') notify(title, 'New level today! ' + pick(['Four boxes = one star ⭐','Start with a walk 🚶‍♀️','Small steps, big wins 💗'], dayNoOf(n)) + (s.streak ? ' · ' + s.streak + '-day streak 🔥' : ''));
-    else notify(title, left === 0 ? 'Perfect day already — proud of you! ⭐' : left + ' box' + (left > 1 ? 'es' : '') + ' left to earn today\'s star. You can still do it! 💪');
+    else notify(title, left === 0 ? 'Perfect day already — proud of you! ⭐' : (s.streak ? '🔥 Don\'t break your ' + s.streak + '-day chain! ' : '') + left + ' box' + (left > 1 ? 'es' : '') + ' left to earn today\'s star. You can still do it! 💪');
   });
 }
 setInterval(tickReminders, 20000);
@@ -934,7 +937,7 @@ window.__jaanuMeta = m => {
   if (m.rewards) rewards = m.rewards;
   if (m.freeze){ settings.freeze = m.freeze; renderHeader(); }
   const e = m.event;
-  if (e && e.from !== me && e.ts > lastEvt){ lastEvt = e.ts; try { localStorage.setItem('jaanu_evt', e.ts); } catch(_){} notify(e.type === 'cheer' ? '💗 Cheer for you!' : '⭐ Partner update', e.text); chime(); }
+  if (e && e.from !== me && e.ts > lastEvt){ lastEvt = e.ts; try { localStorage.setItem('jaanu_evt', e.ts); } catch(_){} notify(e.type === 'cheer' ? '💗 Cheer for you!' : '⭐ Partner update', e.text); chime(); speak(e.text.replace(/[^\w\s.,'!-]/g, '')); }
   setMotive();
 };
 function rewardLine(){
@@ -987,11 +990,11 @@ document.getElementById('undo').addEventListener('click', e => {
 /* ---- craving rescue ---- */
 let cvT = 0;
 document.getElementById('tCrave').addEventListener('click', () => {
-  const o = document.getElementById('crave'), el = document.getElementById('cvT'); let left = 120; o.classList.add('show'); el.textContent = '2:00';
+  const o = document.getElementById('crave'), el = document.getElementById('cvT'); let left = 120; o.classList.add('show'); document.getElementById('cvWhy').textContent = '💗 Remember why: ' + (meta.why || 'for our family and a healthy future.'); el.textContent = '2:00';
   clearInterval(cvT); cvT = setInterval(() => { left--; el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'); if (left <= 0){ clearInterval(cvT); el.textContent = '✓'; chime(); } }, 1000);
 });
 document.getElementById('cvGum').addEventListener('click', () => { const t = todayISO(), d = getDay(t); patchDay(t, { gum: (d.gum || 0) + 1 }); toast('+1 gum logged'); });
-document.getElementById('cvDone').addEventListener('click', () => { clearInterval(cvT); document.getElementById('crave').classList.remove('show'); notify('You beat the craving! 💪', 'Every craving you ride out makes the next one weaker.'); sendEvent('cheer', 'beat a craving 💪'); });
+document.getElementById('cvDone').addEventListener('click', () => { clearInterval(cvT); document.getElementById('crave').classList.remove('show'); speak('You did it! Craving beaten. I am proud of you.'); notify('You beat the craving! 💪', 'Every craving you ride out makes the next one weaker.'); sendEvent('cheer', 'beat a craving 💪'); });
 document.getElementById('tMusic').addEventListener('click', toggleMusic);
 document.getElementById('tCheer').addEventListener('click', () => { if (!me){ document.getElementById('tMore').click(); return; } sendEvent('cheer', 'sent you a big cheer 💗 — you can do it!'); toast('Cheer sent 💗'); chime(); });
 
@@ -999,17 +1002,24 @@ document.getElementById('tCheer').addEventListener('click', () => { if (!me){ do
 const moreEl = document.getElementById('more'); moreEl.className = ''; moreEl.id = 'more';
 moreEl.style.cssText = 'position:fixed;inset:0;z-index:88;background:rgba(59,42,51,.45);display:none;align-items:flex-end;';
 function openMore(){
-  let h = '<div class="sheetbox"><h2>⚙️ Jaanu settings</h2><div class="btns"><button data-r="Amit" class="' + (me === 'Amit' ? 'sel' : '') + '">I am Amit</button><button data-r="Prity" class="' + (me === 'Prity' ? 'sel' : '') + '">I am Prity</button></div>';
+  let h = '<div class="sheetbox"><h2>⚙️ Jaanu settings</h2><div class="btns">' + (me === 'Prity' ? '' : '<button data-r="Amit" class="' + (me === 'Amit' ? 'sel' : '') + '">I am Amit</button>') + '<button data-r="Prity" class="' + (me === 'Prity' ? 'sel' : '') + '">I am Prity</button></div>';
+  if (me === 'Prity' && meta.pinHash) h += '<button class="pbtn" id="mSw">🔑 Amit login (PIN)</button>';
+  if (me === 'Amit' && !meta.pinHash) h += '<button class="pbtn" id="mPin">🔐 Protect Amit mode with a PIN</button>';
   h += '<p class="small">Pick who is on this phone — cheers and wins go to the other phone live.</p>';
   if (me === 'Amit'){ h += '<h3 style="margin:10px 0 0">🎁 Level rewards for Prity</h3>'; for (let L = 2; L <= 6; L++) h += '<label>Lv ' + L + ' (' + NAMES[L-1] + ')<input type="text" data-rw="' + L + '" value="' + escAttr(rewards[L] || '') + '" placeholder="e.g. Dinner date"></label>'; h += '<p class="small">Prity only sees "a surprise" until she unlocks it.</p>'; }
+  if (me === 'Amit'){ h += '<h3 style="margin:10px 0 0">💌 Your messages for her (shown on streak milestones)</h3>'; [7,14,21,30,45,60].forEach(L => { h += '<label>' + L + ' days<input type="text" data-lv="' + L + '" value="' + escAttr((meta.love || {})[L] || '') + '" placeholder="e.g. So proud of you"></label>'; }); }
+  h += '<label>💗 Why we are doing this<input type="text" data-why value="' + escAttr(meta.why || '') + '" placeholder="Shown when a craving hits"></label><button class="pbtn" id="mVoice">🗣️ Spoken cheers: ' + (voiceOn ? 'ON' : 'OFF') + '</button>';
   h += '<button class="pbtn" id="mSong">🎶 Play my own song (pick audio file)</button><button class="pbtn" id="mBack">💾 Backup data</button><button class="pbtn" id="mRest">📥 Restore backup</button><input type="file" id="mFile" hidden><button class="pbtn" id="mClose">Done</button></div>';
   moreEl.innerHTML = h; moreEl.style.display = 'flex';
 }
 document.getElementById('tMore').addEventListener('click', openMore);
 moreEl.addEventListener('click', e => {
   const t = e.target, f = document.getElementById('mFile');
-  if (t === moreEl || t.id === 'mClose'){ const rw = {}; moreEl.querySelectorAll('[data-rw]').forEach(i => { if (i.value.trim()) rw[i.dataset.rw] = i.value.trim(); }); if (me === 'Amit'){ rewards = rw; pushMeta({ rewards: rw }); } moreEl.style.display = 'none'; setMotive(); }
-  else if (t.dataset.r){ me = t.dataset.r; try { localStorage.setItem('jaanu_role', me); } catch(_){} openMore(); }
+  if (t === moreEl || t.id === 'mClose'){ const rw = {}; moreEl.querySelectorAll('[data-rw]').forEach(i => { if (i.value.trim()) rw[i.dataset.rw] = i.value.trim(); }); if (me === 'Amit'){ rewards = rw; const lv = {}; moreEl.querySelectorAll('[data-lv]').forEach(i => { if (i.value.trim()) lv[i.dataset.lv] = i.value.trim(); }); pushMeta({ rewards: rw, love: lv }); } const w = moreEl.querySelector('[data-why]'); if (w) pushMeta({ why: w.value.trim() }); moreEl.style.display = 'none'; setMotive(); }
+  else if (t.dataset.r){ pickRole(t.dataset.r); }
+  else if (t.id === 'mSw'){ pickRole('Amit'); }
+  else if (t.id === 'mPin'){ me = ''; pickRole('Amit'); }
+  else if (t.id === 'mVoice'){ voiceOn = !voiceOn; try { localStorage.setItem('jaanu_voice', voiceOn ? '1' : '0'); } catch(_){} t.textContent = '🗣️ Spoken cheers: ' + (voiceOn ? 'ON' : 'OFF'); if (voiceOn) speak('Spoken cheers are on'); }
   else if (t.id === 'mSong'){ f.accept = 'audio/*'; f.dataset.k = 'song'; f.click(); }
   else if (t.id === 'mRest'){ f.accept = '.json'; f.dataset.k = 'rest'; f.click(); }
   else if (t.id === 'mBack'){ dl('jaanu-backup.json', JSON.stringify({ days, settings, rewards })); }
@@ -1019,6 +1029,21 @@ moreEl.addEventListener('change', e => {
   if (e.target.dataset.k === 'song'){ if (song) song.pause(); clearInterval(musicT); musicT = 0; song = new Audio(URL.createObjectURL(f)); song.loop = true; song.play(); document.getElementById('tMusic').classList.add('on'); }
   else f.text().then(t => { try { const b = JSON.parse(t); Object.keys(b.days || {}).forEach(k => { if (!days[k] || (b.days[k].updatedAt || 0) > (days[k].updatedAt || 0)){ days[k] = b.days[k]; pendingSync[k] = true; } }); saveLocal(); flushPending(); renderAll(); toast('Backup restored ✓'); } catch(_){ toast('Not a valid backup'); } });
 });
+async function sha(x){ const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('jaanu-amit:' + x)); return Array.from(new Uint8Array(b)).map(v => v.toString(16).padStart(2, '0')).join(''); }
+async function pickRole(r){
+  if (r === 'Amit' && me !== 'Amit'){
+    if (!meta.pinHash){
+      const a = prompt('Create a secret 4–6 digit PIN for Amit, so only you can see the rewards:');
+      if (!a || !/^\d{4,6}$/.test(a)){ toast('PIN must be 4–6 digits'); openMore(); return; }
+      if (prompt('Type the PIN again:') !== a){ toast('PINs did not match'); openMore(); return; }
+      pushMeta({ pinHash: await sha(a) });
+    } else {
+      const a = prompt('Enter Amit PIN:');
+      if (!a || (await sha(a)) !== meta.pinHash){ toast('Wrong PIN'); openMore(); return; }
+    }
+  }
+  me = r; try { localStorage.setItem('jaanu_role', me); } catch(_){} openMore(); setMotive();
+}
 function dl(name, text, type){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/json' })); a.download = name; a.click(); }
 
 /* ---- progress: weekly summary, chart, badges, freeze, doctor report ---- */
@@ -1070,6 +1095,14 @@ function doctorReport(){
   f.contentDocument.write('<html><body style="font-family:sans-serif;font-size:12px"><h2>Jaanu report — to ' + t + '</h2><p>TSH result: ' + settings.tsh + ' · Stars: ' + computeStats().stars + ' · Best streak: ' + bestStreak() + '</p><table border="1" cellpadding="4" style="border-collapse:collapse"><tr><th>Date</th><th>Gutka/target</th><th>Gum</th><th>Alcohol</th><th>Walk</th><th>Food</th><th>Period</th><th>Note</th></tr>' + rows + '</table></body></html>');
   f.contentDocument.close(); setTimeout(() => { f.contentWindow.print(); setTimeout(() => f.remove(), 2000); }, 300);
 }
+
+/* ===================== v4: daily quotes, spoken cheers, star sounds ===================== */
+const QUOTES = [['Small steps every day build a big life.','रोज़ के छोटे कदम ही बड़ी ज़िंदगी बनाते हैं।'],['You are stronger than any craving.','तुम किसी भी तलब से ज़्यादा मज़बूत हो।'],['Progress, not perfection.','परफेक्शन नहीं, बस आगे बढ़ना है।'],['Every healthy choice is a gift to our future.','हर सही फ़ैसला हमारे भविष्य का तोहफ़ा है।'],['Today\'s effort is tomorrow\'s smile.','आज की मेहनत कल की मुस्कान है।'],['We do this together, one day at a time.','हम साथ हैं, एक-एक दिन करके।'],['A slip is not a fall — start again.','फिसलना हारना नहीं है — फिर से शुरू करो।'],['Be proud of how far you have come.','कितना आगे आए हो, उस पर गर्व करो।']];
+function quoteHTML(n){ const q = pick(QUOTES, n); return '<span class="says">💬 Jaanu says: “' + q[0] + '”<br>' + q[1] + '</span>'; }
+let voiceOn = true; try { voiceOn = localStorage.getItem('jaanu_voice') !== '0'; } catch(e){}
+function speak(t){ try { if (!voiceOn || !window.speechSynthesis || !t) return; const u = new SpeechSynthesisUtterance(t); u.lang = 'en-IN'; u.rate = .95; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch(e){} }
+const WIN_SPEAK = ['Level complete! You crushed it, Jaanu!','Perfect day! I am so proud of you.','Another star! Keep going, you are amazing.','Well done! One more level cleared.'];
+function starPings(){ try { [0, .25, .5].forEach((d, i) => tone(NOTE[4 + i * 2] * 2, .5, .13, .2 + d)); } catch(e){} }
 
 /* ---------- boot ---------- */
 window.__jaanuRerender = () => { renderAll(); scrollToISO(focusIso || todayISO(), false); };
