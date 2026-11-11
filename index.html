@@ -200,6 +200,24 @@
   .sheetbox input[type=time]{border:1px solid var(--line);border-radius:10px;padding:7px;font-size:15px;}
   .sheetbox .btns{display:flex;gap:8px;margin-top:10px;} .sheetbox .btns button{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;}
   .sheetbox .btns .main{background:var(--pink);color:#fff;border-color:var(--pink);}
+
+  /* ===== v3 ===== */
+  #tools{display:flex;gap:7px;margin:10px 14px 0;overflow-x:auto;scrollbar-width:none;}
+  #tools button{flex:1;white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 12px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:var(--shadow);}
+  #tools button.on{background:var(--pink);color:#fff;}
+  #undo{position:fixed;left:12px;bottom:92px;z-index:61;display:none;background:#1f2937;color:#fff;border:0;border-radius:999px;padding:10px 16px;font-weight:800;font-size:13px;}
+  #crave{position:fixed;inset:0;z-index:92;background:linear-gradient(180deg,#312e81,#831843);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px;}
+  #crave.show{display:flex;} #crave h2{margin:0;font-size:22px;}
+  .orb{width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,#fbcfe8,#ec4899);animation:breathe 8s ease-in-out infinite;box-shadow:0 0 50px #f9a8d4;}
+  @keyframes breathe{0%,100%{transform:scale(.6)}50%{transform:scale(1.25)}}
+  #crave .t{font-size:34px;font-weight:900;} #crave button{border:0;border-radius:999px;padding:12px 22px;font-weight:800;font-size:15px;background:#fff;color:var(--pink-d);margin:3px;}
+  .wk{display:grid;grid-template-columns:auto 1fr auto auto;gap:6px 10px;font-size:13px;align-items:center;}
+  .wk i{display:block;height:8px;background:var(--pink-l);border-radius:9px;overflow:hidden;} .wk i b{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--gold));}
+  .badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px;}
+  .bdg{text-align:center;font-size:10.5px;font-weight:700;padding:8px 2px;border-radius:12px;background:var(--gold-l);} .bdg b{display:block;font-size:24px;} .bdg.lk{filter:grayscale(1);opacity:.4;}
+  .sheetbox{max-height:88vh;overflow:auto;} .sheetbox input[type=text]{width:55%;border:1px solid var(--line);border-radius:10px;padding:8px;font-size:14px;}
+  .sheetbox .btns button.sel{background:var(--pink);color:#fff;} .pbtn{width:100%;margin-top:8px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;font-weight:800;cursor:pointer;}
+
 </style>
 </head>
 <body>
@@ -301,10 +319,12 @@
 </header>
 
 <div id="motive"></div>
+<div id="tools"><button id="tCrave">🆘 Craving</button><button id="tMusic">🎵 Music</button><button id="tCheer">💗 Cheer</button><button id="tMore">⚙️ More</button></div>
 <div id="map" aria-label="Stage map"></div>
 <div id="celebrate"></div>
 <div id="deck" aria-label="Daily check-in cards"></div>
 
+<section class="info" id="progress"></section>
 <section class="info">
   <h2>How Jaanu works 📒</h2>
   <p>Swipe the cards sideways — today's card is first. Tap a card's boxes each day. <b>4 key boxes</b> make a perfect day: gutka at or under the day's target, no alcohol, 30-minute walk, less-oil food. A perfect day earns ⭐ 1 star. 7 perfect days in a row = a new level.</p>
@@ -341,6 +361,10 @@
 </nav>
 <div id="toast"></div>
 <div id="banner"></div>
+<button id="undo">↩ Undo</button>
+<div id="crave"><h2>Breathe. This craving will pass 💗</h2><div class="orb"></div><div id="cvT" class="t">2:00</div><p style="margin:0;max-width:280px">Breathe in as it grows, out as it shrinks. Chew one gum slowly if you need to.</p>
+  <div><button id="cvGum">+1 gum</button><button id="cvDone">I did it 💪</button></div></div>
+<div id="more" class="sheetx"></div>
 <div id="lvl"></div>
 <div id="sheet"><div class="sheetbox">
   <h2>🔔 Daily reminders</h2>
@@ -433,7 +457,7 @@ function computeStats(){
   if (!isPerfect(tISO)) cursor = addDays(cursor, -1);
   while (true){
     const iso = isoOf(cursor);
-    if (cursor < START || !isPerfect(iso)) break;
+    if (cursor < START || !(isPerfect(iso) || (settings.freeze || {})[iso])) break;
     streak++;
     cursor = addDays(cursor, -1);
   }
@@ -469,7 +493,7 @@ function fertileWindows(){
   });
   if (starts.length){
     const last = new Date(starts[starts.length - 1] + 'T00:00:00');
-    const nextStart = addDays(last, 28);
+    const nextStart = addDays(last, cycLen(starts));
     for (let i = 9; i <= 16; i++) wins.push(isoOf(addDays(nextStart, i)));
   }
   return new Set(wins);
@@ -565,7 +589,7 @@ function renderAll(){
   renderHeader();
   buildMap();
   const f = cardEl(focusIso || todayISO()); if (f) f.classList.add('focus');
-  setMotive();
+  setMotive(); renderProgress();
 }
 function renderHeader(){
   const s = computeStats();
@@ -607,7 +631,7 @@ function updateSyncDot(){
 /* ---------- interactions ---------- */
 function patchDay(iso, patch){
   const d = getDay(iso);
-  const wasPerfect = isPerfect(iso);
+  const wasPerfect = isPerfect(iso); showUndo(iso);
   Object.assign(d, patch);
   d.updatedAt = Date.now();
   saveLocal();
@@ -807,7 +831,7 @@ function setMotive(){
   else if (done === 4) main = '⭐ Today is won! Rest well, Jaanu 💗';
   else if (s.streak >= 3) main = '🔥 ' + s.streak + ' days in a row — protect the streak today!';
   else main = pick(['💗 Every perfect day is a step closer. You have got this!','🌱 Slow and steady — one day, one level.','🎯 Four boxes = one star. Start with the easiest!'], dn);
-  el.innerHTML = '<b>' + main + '</b><span>' + (done < 4 ? (4 - done) + ' box' + (4 - done > 1 ? 'es' : '') + ' left today · ' : '') + need + ' perfect day' + (need > 1 ? 's' : '') + ' to reach ' + nxt + '</span>';
+  el.innerHTML = '<b>' + main + '</b><span>' + (done < 4 ? (4 - done) + ' box' + (4 - done > 1 ? 'es' : '') + ' left today · ' : '') + need + ' perfect day' + (need > 1 ? 's' : '') + ' to reach ' + nxt + '</span>' + nextRewardHTML(s);
 }
 
 /* ---- level complete + progress hooks ---- */
@@ -819,8 +843,8 @@ function afterChange(iso, wasPerfect){
 }
 function levelComplete(iso){
   const n = dayNoOf(new Date(iso + 'T00:00:00')), ov = document.getElementById('lvl');
-  ov.innerHTML = '<div class="lvlbox"><div class="lvlt">Level ' + n + ' complete!</div><div class="lvlstars"><span>⭐</span><span>⭐</span><span>⭐</span></div><div class="lvlm">' + pick(WIN_MSGS, n) + '</div><button id="lvlGo">Next level ▶</button></div>';
-  ov.classList.add('show'); confetti(); try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch(e){}
+  ov.innerHTML = '<div class="lvlbox"><div class="lvlt">Level ' + n + ' complete!</div><div class="lvlstars"><span>⭐</span><span>⭐</span><span>⭐</span></div><div class="lvlm">' + pick(WIN_MSGS, n) + rewardLine() + '</div><button id="lvlGo">Next level ▶</button></div>';
+  ov.classList.add('show'); confetti(); chime(); sendEvent('win', 'finished Level ' + n + ' ⭐'); try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch(e){}
   let gone = false;
   const go = () => {
     if (gone) return; gone = true; ov.classList.remove('show');
@@ -894,8 +918,161 @@ document.getElementById('notiTest').addEventListener('click', async () => {
   const was = noti.on; noti.on = true; notify('Jaanu 💗', 'This is how your reminders will look!'); noti.on = was;
 });
 
+/* ===================== v3: live partner sync, rewards, music, progress, tools ===================== */
+const LS_META = 'jaanu_meta_v1';
+let meta = {}; try { meta = JSON.parse(localStorage.getItem(LS_META) || '{}'); } catch(e){}
+let rewards = meta.rewards || {}; if (meta.freeze) settings.freeze = meta.freeze;
+let me = ''; try { me = localStorage.getItem('jaanu_role') || ''; } catch(e){}
+let lastEvt = 0; try { lastEvt = parseInt(localStorage.getItem('jaanu_evt') || '', 10) || (localStorage.setItem('jaanu_evt', Date.now()), Date.now()); } catch(e){}
+function pushMeta(o){
+  Object.assign(meta, o); try { localStorage.setItem(LS_META, JSON.stringify(meta)); } catch(e){}
+  try { if (window.__jaanuCloud && window.__jaanuCloud.ready) window.__jaanuCloud.saveMeta(o).catch(() => {}); } catch(e){}
+}
+function sendEvent(type, text){ if (me) pushMeta({ event: { from: me, type, text: me + ' ' + text, ts: Date.now() } }); }
+window.__jaanuMeta = m => {
+  meta = Object.assign(meta, m); try { localStorage.setItem(LS_META, JSON.stringify(meta)); } catch(e){}
+  if (m.rewards) rewards = m.rewards;
+  if (m.freeze){ settings.freeze = m.freeze; renderHeader(); }
+  const e = m.event;
+  if (e && e.from !== me && e.ts > lastEvt){ lastEvt = e.ts; try { localStorage.setItem('jaanu_evt', e.ts); } catch(_){} notify(e.type === 'cheer' ? '💗 Cheer for you!' : '⭐ Partner update', e.text); chime(); }
+  setMotive();
+};
+function rewardLine(){
+  const s = computeStats(), r = rewards[s.level];
+  let seen = 1; try { seen = parseInt(localStorage.getItem('jaanu_lvl_seen') || '1', 10); } catch(e){}
+  if (s.level > seen){ try { localStorage.setItem('jaanu_lvl_seen', s.level); } catch(e){} if (r) return '<br><b>🎁 Reward unlocked: ' + r + '</b>'; }
+  return '';
+}
+function nextRewardHTML(s){
+  const L = s.level + 1, r = rewards[L]; if (!r || L > 6) return '';
+  return '<span style="display:block;margin-top:3px">🎁 Lv ' + L + ' reward: ' + (me === 'Amit' ? r : 'a surprise 🤫') + '</span>';
+}
+function cycLen(starts){
+  if (starts.length < 2) return 28; let g = [];
+  for (let i = 1; i < starts.length; i++) g.push((new Date(starts[i]) - new Date(starts[i-1])) / DAY_MS);
+  return Math.min(40, Math.max(21, Math.round(g.reduce((a, b) => a + b, 0) / g.length)));
+}
+
+/* ---- music: soft synth lullaby + chimes (no files needed) + optional own song ---- */
+let ac = null, musicT = 0, mStep = 0, song = null;
+const NOTE = [261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25];
+function ctx(){ ac = ac || new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); return ac; }
+function tone(f, d, v, at){
+  const c = ctx(), o = c.createOscillator(), g = c.createGain(), t = c.currentTime + (at || 0);
+  o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .05); g.gain.exponentialRampToValueAtTime(.0001, t + d);
+  o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + d + .05);
+}
+function chime(){ try { [0, 2, 4, 7].forEach((n, i) => tone(NOTE[n] * 2, .6, .12, i * .11)); } catch(e){} }
+const MEL = [0, 2, 4, 2, 5, 4, 2, 1, 0, 2, 4, 6, 5, 4, 2, 0];
+function toggleMusic(){
+  const b = document.getElementById('tMusic');
+  if (musicT || (song && !song.paused)){ clearInterval(musicT); musicT = 0; if (song) song.pause(); b.classList.remove('on'); return; }
+  if (song){ song.play(); } else {
+    ctx(); musicT = setInterval(() => { tone(NOTE[MEL[mStep % 16]], 1.6, .07); if (mStep % 4 === 0) tone(NOTE[MEL[mStep % 16]] / 2, 2.4, .05); mStep++; }, 700);
+  }
+  b.classList.add('on');
+}
+
+/* ---- undo ---- */
+let undoSnap = null, undoT = 0;
+function showUndo(iso){
+  undoSnap = { iso, v: JSON.stringify(getDay(iso)) };
+  const u = document.getElementById('undo'); u.style.display = 'block'; clearTimeout(undoT); undoT = setTimeout(() => { u.style.display = 'none'; }, 6000);
+}
+document.getElementById('undo').addEventListener('click', e => {
+  if (!undoSnap) return; days[undoSnap.iso] = JSON.parse(undoSnap.v); days[undoSnap.iso].updatedAt = Date.now();
+  saveLocal(); queueCloudSave(undoSnap.iso); renderAll(); keepScroll(undoSnap.iso); e.target.style.display = 'none';
+});
+
+/* ---- craving rescue ---- */
+let cvT = 0;
+document.getElementById('tCrave').addEventListener('click', () => {
+  const o = document.getElementById('crave'), el = document.getElementById('cvT'); let left = 120; o.classList.add('show'); el.textContent = '2:00';
+  clearInterval(cvT); cvT = setInterval(() => { left--; el.textContent = Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0'); if (left <= 0){ clearInterval(cvT); el.textContent = '✓'; chime(); } }, 1000);
+});
+document.getElementById('cvGum').addEventListener('click', () => { const t = todayISO(), d = getDay(t); patchDay(t, { gum: (d.gum || 0) + 1 }); toast('+1 gum logged'); });
+document.getElementById('cvDone').addEventListener('click', () => { clearInterval(cvT); document.getElementById('crave').classList.remove('show'); notify('You beat the craving! 💪', 'Every craving you ride out makes the next one weaker.'); sendEvent('cheer', 'beat a craving 💪'); });
+document.getElementById('tMusic').addEventListener('click', toggleMusic);
+document.getElementById('tCheer').addEventListener('click', () => { if (!me){ document.getElementById('tMore').click(); return; } sendEvent('cheer', 'sent you a big cheer 💗 — you can do it!'); toast('Cheer sent 💗'); chime(); });
+
+/* ---- More sheet: who am I, rewards, own song, backup ---- */
+const moreEl = document.getElementById('more'); moreEl.className = ''; moreEl.id = 'more';
+moreEl.style.cssText = 'position:fixed;inset:0;z-index:88;background:rgba(59,42,51,.45);display:none;align-items:flex-end;';
+function openMore(){
+  let h = '<div class="sheetbox"><h2>⚙️ Jaanu settings</h2><div class="btns"><button data-r="Amit" class="' + (me === 'Amit' ? 'sel' : '') + '">I am Amit</button><button data-r="Prity" class="' + (me === 'Prity' ? 'sel' : '') + '">I am Prity</button></div>';
+  h += '<p class="small">Pick who is on this phone — cheers and wins go to the other phone live.</p>';
+  if (me === 'Amit'){ h += '<h3 style="margin:10px 0 0">🎁 Level rewards for Prity</h3>'; for (let L = 2; L <= 6; L++) h += '<label>Lv ' + L + ' (' + NAMES[L-1] + ')<input type="text" data-rw="' + L + '" value="' + escAttr(rewards[L] || '') + '" placeholder="e.g. Dinner date"></label>'; h += '<p class="small">Prity only sees "a surprise" until she unlocks it.</p>'; }
+  h += '<button class="pbtn" id="mSong">🎶 Play my own song (pick audio file)</button><button class="pbtn" id="mBack">💾 Backup data</button><button class="pbtn" id="mRest">📥 Restore backup</button><input type="file" id="mFile" hidden><button class="pbtn" id="mClose">Done</button></div>';
+  moreEl.innerHTML = h; moreEl.style.display = 'flex';
+}
+document.getElementById('tMore').addEventListener('click', openMore);
+moreEl.addEventListener('click', e => {
+  const t = e.target, f = document.getElementById('mFile');
+  if (t === moreEl || t.id === 'mClose'){ const rw = {}; moreEl.querySelectorAll('[data-rw]').forEach(i => { if (i.value.trim()) rw[i.dataset.rw] = i.value.trim(); }); if (me === 'Amit'){ rewards = rw; pushMeta({ rewards: rw }); } moreEl.style.display = 'none'; setMotive(); }
+  else if (t.dataset.r){ me = t.dataset.r; try { localStorage.setItem('jaanu_role', me); } catch(_){} openMore(); }
+  else if (t.id === 'mSong'){ f.accept = 'audio/*'; f.dataset.k = 'song'; f.click(); }
+  else if (t.id === 'mRest'){ f.accept = '.json'; f.dataset.k = 'rest'; f.click(); }
+  else if (t.id === 'mBack'){ dl('jaanu-backup.json', JSON.stringify({ days, settings, rewards })); }
+});
+moreEl.addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  if (e.target.dataset.k === 'song'){ if (song) song.pause(); clearInterval(musicT); musicT = 0; song = new Audio(URL.createObjectURL(f)); song.loop = true; song.play(); document.getElementById('tMusic').classList.add('on'); }
+  else f.text().then(t => { try { const b = JSON.parse(t); Object.keys(b.days || {}).forEach(k => { if (!days[k] || (b.days[k].updatedAt || 0) > (days[k].updatedAt || 0)){ days[k] = b.days[k]; pendingSync[k] = true; } }); saveLocal(); flushPending(); renderAll(); toast('Backup restored ✓'); } catch(_){ toast('Not a valid backup'); } });
+});
+function dl(name, text, type){ const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: type || 'application/json' })); a.download = name; a.click(); }
+
+/* ---- progress: weekly summary, chart, badges, freeze, doctor report ---- */
+function bestStreak(){
+  let best = 0, cur = 0; const t = todayISO();
+  for (let i = 0; i < TOTAL_DAYS; i++){ const iso = isoOf(addDays(START, i)); if (iso > t) break; if (isPerfect(iso) || (settings.freeze || {})[iso]) best = Math.max(best, ++cur); else cur = 0; }
+  return best;
+}
+function renderProgress(){
+  const el = document.getElementById('progress'), t = todayISO(), s = computeStats(), tn = dayNoOf(new Date(t + 'T00:00:00'));
+  if (tn < 1){ el.innerHTML = ''; return; }
+  /* weekly */
+  let wk = '<div class="wk">';
+  for (let w = 0; w * 7 < Math.min(tn, TOTAL_DAYS); w++){
+    let p = 0, g = 0, gn = 0;
+    for (let i = w * 7; i < Math.min(w * 7 + 7, TOTAL_DAYS); i++){ const iso = isoOf(addDays(START, i)); if (iso > t) break; const d = getDay(iso); if (isPerfect(iso)) p++; if (d.gutka !== null){ g += d.gutka; gn++; } }
+    wk += '<b>Wk ' + (w + 1) + '</b><i><b style="width:' + Math.round(p / 7 * 100) + '%"></b></i><span>' + p + '/7 ⭐</span><span class="small">' + (gn ? (g / gn).toFixed(1) : '–') + '/day</span>';
+  }
+  wk += '</div>';
+  /* chart: last 14 days gutka vs target */
+  let bars = '', line = '', n = 14;
+  for (let k = 0; k < n; k++){
+    const d = addDays(new Date(t + 'T00:00:00'), k - n + 1), iso = isoOf(d); if (d < START || d > END) continue;
+    const x = 12 + k * 22, g = getDay(iso).gutka, tg = taperTarget(d);
+    if (g !== null) bars += '<rect x="' + x + '" y="' + (90 - g * 11) + '" width="14" height="' + (g * 11) + '" rx="3" fill="' + (g <= tg ? '#16a34a' : '#ef4444') + '"/>';
+    line += (line ? 'L' : 'M') + (x + 7) + ' ' + (90 - tg * 11) + ' ';
+    if (getDay(iso).walk) bars += '<text x="' + (x + 7) + '" y="104" font-size="9" text-anchor="middle">🚶</text>';
+  }
+  const chart = '<svg viewBox="0 0 322 108" width="100%"><line x1="0" y1="90" x2="322" y2="90" stroke="#f3d9e6"/>' + bars + '<path d="' + line + '" fill="none" stroke="#ec4899" stroke-width="2" stroke-dasharray="4 3"/></svg>';
+  /* badges */
+  const ks = Object.keys(days).filter(i => i >= '2026-11-11' && i <= t), best = bestStreak();
+  const walks = ks.filter(i => days[i].walk).length, food = ks.filter(i => days[i].food).length;
+  const B = [['⭐','First Star',s.stars >= 1],['🌱','7-day Sprout',best >= 7],['🌸','14-day Bloom',best >= 14],['🚫','Zero gutka day',ks.some(i => days[i].gutka === 0)],['🚶','10 walks',walks >= 10],['🥗','10 light-food days',food >= 10],['🏆','30 stars',s.stars >= 30],['👑','28-day streak',best >= 28]];
+  const badges = '<div class="badges">' + B.map(b => '<div class="bdg' + (b[2] ? '' : ' lk') + '"><b>' + b[0] + '</b>' + b[1] + '</div>').join('') + '</div>';
+  /* freeze */
+  const yIso = isoOf(addDays(new Date(t + 'T00:00:00'), -1)), wkOf = iso => Math.floor((dayNoOf(new Date(iso + 'T00:00:00')) - 1) / 7), fz = settings.freeze || {};
+  const canFreeze = yIso >= '2026-11-11' && !isPerfect(yIso) && !fz[yIso] && !Object.keys(fz).some(i => wkOf(i) === wkOf(yIso));
+  el.innerHTML = '<h2>📊 Your progress</h2><h3>Gutka — last 14 days <span class="small">(green = on target, 🚶 = walked)</span></h3>' + chart + '<h3>Weekly summary</h3>' + wk +
+    '<h3>🏅 Badges <span class="small">best streak ' + best + '</span></h3>' + badges +
+    (canFreeze ? '<button class="pbtn" id="frz">❄️ Use this week\'s streak freeze for yesterday</button>' : '') + '<button class="pbtn" id="rpt">📄 Doctor report (print / save PDF)</button>';
+}
+document.getElementById('progress').addEventListener('click', e => {
+  if (e.target.id === 'frz'){ const y = isoOf(addDays(new Date(todayISO() + 'T00:00:00'), -1)); settings.freeze = Object.assign({}, settings.freeze, { [y]: true }); saveLocal(); pushMeta({ freeze: settings.freeze }); renderAll(); toast('❄️ Streak protected'); }
+  if (e.target.id === 'rpt') doctorReport();
+});
+function doctorReport(){
+  const t = todayISO(), rows = Object.keys(days).filter(i => i >= '2026-11-11' && i <= t).sort().map(i => { const d = days[i]; return '<tr><td>' + i + '</td><td>' + (d.gutka ?? '–') + ' / ' + taperTarget(new Date(i + 'T00:00:00')) + '</td><td>' + (d.gum ?? '–') + '</td><td>' + (d.alcohol === null ? '–' : d.alcohol ? 'Yes' : 'No') + '</td><td>' + (d.walk ? '✓' : '') + '</td><td>' + (d.food ? '✓' : '') + '</td><td>' + (d.period ? '🩸' : '') + '</td><td>' + escAttr(d.note || '') + '</td></tr>'; }).join('');
+  const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;width:0;height:0;border:0'; document.body.appendChild(f);
+  f.contentDocument.write('<html><body style="font-family:sans-serif;font-size:12px"><h2>Jaanu report — to ' + t + '</h2><p>TSH result: ' + settings.tsh + ' · Stars: ' + computeStats().stars + ' · Best streak: ' + bestStreak() + '</p><table border="1" cellpadding="4" style="border-collapse:collapse"><tr><th>Date</th><th>Gutka/target</th><th>Gum</th><th>Alcohol</th><th>Walk</th><th>Food</th><th>Period</th><th>Note</th></tr>' + rows + '</table></body></html>');
+  f.contentDocument.close(); setTimeout(() => { f.contentWindow.print(); setTimeout(() => f.remove(), 2000); }, 300);
+}
+
 /* ---------- boot ---------- */
-window.__jaanuRerender = () => { const cur = todayISO(); renderAll(); scrollToISO(cur, false); };
+window.__jaanuRerender = () => { renderAll(); scrollToISO(focusIso || todayISO(), false); };
 renderAll();
 scrollToISO(todayISO(), false);
 updateFocus();
@@ -927,7 +1104,7 @@ const firebaseConfig = {
 try {
   const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
   const { getAuth, signInAnonymously, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js");
-  const { getFirestore, doc, setDoc, getDocs, collection } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
+  const { getFirestore, doc, setDoc, getDocs, collection, onSnapshot } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -954,6 +1131,7 @@ try {
     ready: false,
     save,
     loadAll,
+    saveMeta: (o) => setDoc(doc(db, 'jaanu_meta', 'shared'), o, { merge: true }),
     mergeFromCloud: (cloud) => {
       /* Merge cloud days into localStorage (newer updatedAt wins), then re-render. */
       let local = {};
@@ -982,9 +1160,10 @@ try {
     if (user){
       window.__jaanuCloud.ready = true;
       window.dispatchEvent(new Event('jaanu-cloud-ready'));
+      /* LIVE sync: both phones see each other's changes instantly */
       try {
-        const cloud = await loadAll();
-        window.__jaanuCloud.mergeFromCloud(cloud);
+        onSnapshot(collection(db, 'jaanu_days'), snap => { const out = {}; snap.forEach(x => { out[x.id] = x.data(); }); window.__jaanuCloud.mergeFromCloud(out); }, () => {});
+        onSnapshot(doc(db, 'jaanu_meta', 'shared'), x => { if (x.exists() && window.__jaanuMeta) window.__jaanuMeta(x.data()); }, () => {});
       } catch(e){ /* rules not published yet / offline: stay local-first */ }
     }
   });
