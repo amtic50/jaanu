@@ -128,6 +128,78 @@
   .small{font-size:12px;color:var(--muted);}
   #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1f2937;color:#fff;
     border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700;z-index:60;display:none;box-shadow:var(--shadow);}
+
+  /* ===== v2 upgrade ===== */
+  :root{--cw:min(86vw,400px);}
+  header{position:relative;}
+  .bell{border:1px solid var(--line);background:#fff;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;flex:none;}
+  .sync-dot{margin-left:auto;}
+  #motive{margin:10px 14px 0;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#fdf2f8,#ede9fe);border:1px solid var(--line);box-shadow:var(--shadow);}
+  #motive b{display:block;font-size:14px;} #motive span{font-size:12px;color:var(--muted);}
+  /* candy-style stage map */
+  #map{position:sticky;top:0;z-index:30;margin-top:10px;background:linear-gradient(180deg,#fff7f9,#fdf2f8);border-bottom:1px solid var(--line);
+    overflow-x:auto;overflow-y:hidden;scrollbar-width:none;padding-top:env(safe-area-inset-top);}
+  #map::-webkit-scrollbar{display:none;}
+  .track{position:relative;height:92px;}
+  .track svg{position:absolute;left:0;top:0;height:92px;pointer-events:none;}
+  .track path{fill:none;stroke:#fbcfe8;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;}
+  .node{position:absolute;transform:translate(-50%,-50%);width:30px;height:30px;padding:0;border-radius:50%;border:3px solid #fff;
+    font-size:11px;font-weight:800;cursor:pointer;color:#9d174d;background:#fff;box-shadow:0 3px 0 rgba(0,0,0,.16);}
+  .node.gold{background:linear-gradient(180deg,#fde047,#f59e0b);color:#7c2d12;}
+  .node.part{background:#f9a8d4;color:#831843;}
+  .node.miss{background:#e5e7eb;color:#6b7280;}
+  .node.lock{background:#f3f4f6;color:#9ca3af;box-shadow:none;}
+  .node em{position:absolute;top:100%;left:50%;transform:translateX(-50%);font-size:9px;line-height:1;color:#f59e0b;font-style:normal;white-space:nowrap;}
+  #hero{position:absolute;width:30px;text-align:center;font-size:24px;line-height:1;z-index:2;pointer-events:none;
+    transition:left .65s cubic-bezier(.5,0,.25,1),top .65s cubic-bezier(.5,0,.25,1);filter:drop-shadow(0 3px 2px rgba(219,39,119,.35));margin-left:-15px;}
+  #hero span{display:inline-block;transform-origin:50% 100%;}
+  #hero span.hop{animation:hop .65s ease-out;}
+  @keyframes hop{0%{transform:translateY(0)}25%{transform:translateY(-20px) scale(.9,1.2)}55%{transform:translateY(0) scale(1.25,.75)}75%{transform:translateY(-6px)}100%{transform:none}}
+  /* deck: perfectly centred, equal-height cards, focus pop */
+  #deck{padding:18px calc((100% - var(--cw))/2) 10px;gap:12px;align-items:stretch;scroll-snap-type:x mandatory;}
+  .card{flex:0 0 var(--cw);max-width:none;scroll-snap-align:center;scroll-snap-stop:always;display:flex;flex-direction:column;
+    transform:scale(.93);transform-origin:50% 0;opacity:.7;transition:transform .45s cubic-bezier(.34,1.56,.64,1),opacity .3s;}
+  .card.focus{transform:scale(1);opacity:1;}
+  .card.future.focus{opacity:.8;} .card.future{opacity:.5;}
+  .card.enter{animation:enter .55s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes enter{0%{transform:scale(.9) translateY(16px)}100%{transform:scale(1)}}
+  /* aligned rows: label left, fixed-width control right */
+  .rowline{display:grid;grid-template-columns:1fr 136px;gap:10px;align-items:center;min-height:60px;}
+  .rowline .lbl{min-width:0;}
+  .rowline.stack,.rowline[style]{grid-template-columns:1fr;}
+  .stepper{width:136px;justify-content:space-between;} .stepper button{width:40px;height:40px;}
+  .stepper .val{flex:1;min-width:0;}
+  .seg{width:136px;} .seg button{flex:1;padding:10px 0;}
+  .tog{width:136px;text-align:center;padding:10px 0;}
+  .moods{justify-content:space-between;} .moods button{flex:1;padding:6px 0;}
+  .perfect{min-height:34px;display:flex;align-items:center;font-size:12.5px;color:#9d174d;font-weight:700;}
+  .perfect.win{color:var(--gold);font-weight:800;font-size:14px;}
+  button:active{transform:scale(.94);} .tog,.seg button,.stepper button,.moods button{transition:transform .12s,background .2s;}
+  /* level complete overlay */
+  #lvl{position:fixed;inset:0;z-index:90;background:rgba(59,42,51,.55);display:none;align-items:center;justify-content:center;padding:20px;}
+  #lvl.show{display:flex;}
+  .lvlbox{background:linear-gradient(180deg,#fff,#fdf2f8);border:3px solid var(--gold);border-radius:26px;padding:22px 20px;text-align:center;max-width:330px;
+    animation:boxin .55s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes boxin{from{transform:scale(.3) rotate(-6deg);opacity:0}}
+  .lvlt{font-size:22px;font-weight:900;color:var(--pink-d);}
+  .lvlstars{font-size:46px;margin:6px 0;} .lvlstars span{display:inline-block;animation:starin .6s cubic-bezier(.34,1.56,.64,1) both;}
+  .lvlstars span:nth-child(1){animation-delay:.2s;transform:translateY(8px) rotate(-12deg)} .lvlstars span:nth-child(2){animation-delay:.45s;font-size:1.25em}
+  .lvlstars span:nth-child(3){animation-delay:.7s;transform:translateY(8px) rotate(12deg)}
+  @keyframes starin{from{transform:scale(0) rotate(-180deg);opacity:0}}
+  .lvlm{font-size:14px;font-weight:600;margin:4px 0 14px;}
+  .lvlbox button{border:0;background:var(--pink);color:#fff;font-weight:800;font-size:15px;border-radius:999px;padding:11px 26px;box-shadow:0 4px 0 var(--pink-d);cursor:pointer;}
+  /* notifications */
+  #banner{position:fixed;left:12px;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:95;background:#fff;border:2px solid var(--pink);border-radius:16px;
+    padding:10px 12px;box-shadow:0 8px 24px rgba(219,39,119,.3);transform:translateY(-150%);transition:transform .45s cubic-bezier(.34,1.56,.64,1);max-width:420px;margin:0 auto;}
+  #banner.show{transform:none;} #banner b{display:block;font-size:14px;} #banner span{font-size:12.5px;color:var(--muted);}
+  #sheet{position:fixed;inset:0;z-index:85;background:rgba(59,42,51,.45);display:none;align-items:flex-end;}
+  #sheet.show{display:flex;}
+  .sheetbox{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));animation:up .35s cubic-bezier(.34,1.3,.64,1);}
+  @keyframes up{from{transform:translateY(100%)}}
+  .sheetbox h2{margin:0 0 8px;font-size:17px;} .sheetbox label{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-weight:700;font-size:14px;}
+  .sheetbox input[type=time]{border:1px solid var(--line);border-radius:10px;padding:7px;font-size:15px;}
+  .sheetbox .btns{display:flex;gap:8px;margin-top:10px;} .sheetbox .btns button{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;font-weight:800;font-size:14px;cursor:pointer;}
+  .sheetbox .btns .main{background:var(--pink);color:#fff;border-color:var(--pink);}
 </style>
 </head>
 <body>
@@ -140,6 +212,8 @@
       <p>Prity's 3-month plan · 11 Nov 2026 – 20 Feb 2027</p>
     </div>
     <span class="sync-dot" id="syncDot">● saved on this phone</span>
+    <button class="bell" id="bellBtn" aria-label="Reminders">🔔</button>
+    <button class="bell" id="installBtn" aria-label="Install app" title="Install app" style="display:none">⬇️</button>
   </div>
   <div class="stat-grid">
     <div class="stat"><b id="stStreak">0 🔥</b><span>day streak</span></div>
@@ -159,6 +233,8 @@
   </div>
 </header>
 
+<div id="motive"></div>
+<div id="map" aria-label="Stage map"></div>
 <div id="celebrate"></div>
 <div id="deck" aria-label="Daily check-in cards"></div>
 
@@ -188,7 +264,7 @@
   <h3>🌸 Trying (Month 3)</h3>
   <p>Log period days honestly. Jaanu estimates the fertile window from your logged period start (about cycle days 10–17) and marks those cards 🌸 — but only in Month 3, and only if gutka and alcohol are at zero and the checks (TSH result) are in. Otherwise Month 3 becomes a correction month and trying shifts one cycle. <b>Do not restart the thyroid tablet on your own.</b></p>
   <h3>💾 Saving &amp; sync</h3>
-  <p class="small">Everything saves on this phone first — it works fully offline. When the phone is online it also syncs to the family Firebase (project goalpara-leave, collection <code>jaanu_days</code>). If sync is not set up yet you will see "saved on this phone — will sync later" and nothing is lost.</p>
+  <p class="small">Everything saves on this phone first — it works fully offline. When the phone is online it also syncs to the family Firebase (project jaanu-ac156, collection <code>jaanu_days</code>). If sync is not set up yet you will see "saved on this phone — will sync later" and nothing is lost.</p>
 </section>
 
 <nav class="bottomnav">
@@ -197,6 +273,15 @@
   <button id="nextBtn">Next ▶</button>
 </nav>
 <div id="toast"></div>
+<div id="banner"></div>
+<div id="lvl"></div>
+<div id="sheet"><div class="sheetbox">
+  <h2>🔔 Daily reminders</h2>
+  <label>Morning nudge <input type="time" id="amT"></label>
+  <label>Evening check <input type="time" id="pmT"></label>
+  <p class="small" id="notiHint"></p>
+  <div class="btns"><button id="notiTest">Send test</button><button class="main" id="notiSave">Save</button></div>
+</div></div>
 
 <script>
 /* =====================================================================
@@ -362,7 +447,7 @@ function cardHTML(d, iso, dayNo){
     '<div class="complete">' +
       '<div class="row"><span>Today\'s completion</span><span>' + pct + '% · ' + done + '/4 key boxes</span></div>' +
       '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
-      (perfect ? '<div class="perfect">⭐ Perfect day — star earned!</div>' : '') +
+      '<div class="perfect' + (perfect ? ' win' : '') + '">' + (perfect ? '⭐ Perfect day — star earned!' : cardMotive(done, isFuture, dayNo)) + '</div>' +
     '</div>' +
 
     '<div class="rowline"><div class="lbl"><b>🚬 Gutka packets</b><small>Target ≤ ' + target + ' today · chew gum instead of a packet</small></div>' +
@@ -388,7 +473,7 @@ function cardHTML(d, iso, dayNo){
     '<div class="rowline"><div class="lbl"><b>🩸 Period day</b><small>Log it honestly — it finds the fertile window</small></div>' +
       '<button class="tog period' + (day.period ? ' on' : '') + '" data-act="period" data-iso="' + iso + '" ' + dis + '>' + (day.period ? '✓ Period day' : 'Not today') + '</button></div>' +
 
-    '<div class="rowline"><div class="lbl"><b>💛 Mood</b><small>How is she feeling today?</small></div>' +
+    '<div class="rowline stack"><div class="lbl"><b>💛 Mood</b><small>How is she feeling today?</small></div>' +
       '<div class="moods">' + MOODS.map(m =>
         '<button data-act="mood" data-iso="' + iso + '" data-mood="' + m[1] + '" class="' + (day.mood === m[1] ? 'on' : '') + '" ' + dis + ' title="' + m[1] + '">' + m[0] + '</button>'
       ).join('') + '</div></div>' +
@@ -411,6 +496,9 @@ function renderAll(){
   }
   deck.innerHTML = html;
   renderHeader();
+  buildMap();
+  const f = cardEl(focusIso || todayISO()); if (f) f.classList.add('focus');
+  setMotive();
 }
 function renderHeader(){
   const s = computeStats();
@@ -452,17 +540,19 @@ function updateSyncDot(){
 /* ---------- interactions ---------- */
 function patchDay(iso, patch){
   const d = getDay(iso);
+  const wasPerfect = isPerfect(iso);
   Object.assign(d, patch);
   d.updatedAt = Date.now();
   saveLocal();
   queueCloudSave(iso);
   renderAll();
   keepScroll(iso);
+  afterChange(iso, wasPerfect);
 }
 let lastScrollIso = null;
 function keepScroll(iso){
   const el = document.getElementById('card-' + iso);
-  if (el) deck.scrollTo({ left: el.offsetLeft - deck.offsetLeft - 10, behavior: 'auto' });
+  if (el) deck.scrollTo({ left: el.offsetLeft - deck.offsetLeft - (deck.clientWidth - el.offsetWidth) / 2, behavior: 'auto' });
 }
 deck.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-act]');
@@ -508,7 +598,7 @@ function cardEl(iso){ return document.getElementById('card-' + iso); }
 function scrollToISO(iso, smooth){
   const el = cardEl(iso);
   if (!el) return;
-  deck.scrollTo({ left: el.offsetLeft - deck.offsetLeft - 10, behavior: smooth ? 'smooth' : 'auto' });
+  deck.scrollTo({ left: el.offsetLeft - deck.offsetLeft - (deck.clientWidth - el.offsetWidth) / 2, behavior: smooth ? 'smooth' : 'auto' });
 }
 function scrollByCard(dir){
   const w = (cardEl(todayISO()) || deck.firstElementChild);
@@ -578,11 +668,173 @@ window.addEventListener('jaanu-cloud-ready', () => {
   renderHeader();
 });
 
+/* ===================== v2: stage map, motivation, notifications ===================== */
+const NAMES = ['Seed','Sprout','Bloom','Glow','Star','Superstar'];
+const LAST_ISO = '2027-02-20';
+const pick = (a, n) => a[Math.abs(n) % a.length];
+let focusIso = null;
+
+function cardMotive(done, isFuture, n){
+  if (isFuture) return '🔒 Locked — this level opens on its day';
+  return pick([
+    ['🌅 Fresh level! Start with the walk — easiest star.','🍀 New day, new chance. You can win this one!','💗 Small steps still move the map forward.'],
+    ['🔥 Great start! Keep the combo going.','🚀 One box down — you are warming up!'],
+    ['💪 Halfway there — do not stop now!','✨ Two down, two to go. Nearly a star!'],
+    ['🏁 So close! One last box for the star!','🌟 Final box — finish it, Jaanu!']][Math.min(done,3)], n);
+}
+
+/* ---- stage map (Candy-Crush style) ---- */
+const mapEl = document.getElementById('map');
+const NW = 46;
+const nodeX = i => NW * i + NW / 2 + 12;
+const nodeY = i => 52 + Math.sin(i * 0.9) * 10;
+function buildMap(){
+  if (!document.getElementById('hero')){
+    mapEl.innerHTML = '<div class="track" style="width:' + (NW * TOTAL_DAYS + 24) + 'px"><svg width="' + (NW * TOTAL_DAYS + 24) + '"><path id="mpath"/></svg><div id="mnodes"></div><div id="hero"><span>💗</span></div></div>';
+    let d = ''; for (let i = 0; i < TOTAL_DAYS; i++) d += (i ? 'L' : 'M') + nodeX(i) + ' ' + nodeY(i) + ' ';
+    document.getElementById('mpath').setAttribute('d', d);
+  }
+  const t = todayISO(); let h = '';
+  for (let i = 0; i < TOTAL_DAYS; i++){
+    const iso = isoOf(addDays(START, i)), future = iso > t, done = keyBoxesDone(getDay(iso), 0, iso);
+    const st = future ? 'lock' : done === 4 ? 'gold' : done > 0 ? 'part' : iso < t ? 'miss' : '';
+    const stars = future ? 0 : done >= 4 ? 3 : done === 3 ? 2 : done >= 2 ? 1 : 0;
+    h += '<button class="node ' + st + '" data-go="' + iso + '" style="left:' + nodeX(i) + 'px;top:' + nodeY(i) + 'px">' + (i + 1) + '<em>' + '★'.repeat(stars) + '</em></button>';
+  }
+  document.getElementById('mnodes').innerHTML = h;
+  moveHero(false);
+}
+function moveHero(animate){
+  const hero = document.getElementById('hero'); if (!hero) return;
+  const i = dayNoOf(new Date((focusIso || todayISO()) + 'T00:00:00')) - 1;
+  hero.style.left = nodeX(i) + 'px'; hero.style.top = (nodeY(i) - 44) + 'px';
+  if (animate){ const sp = hero.firstElementChild; sp.classList.remove('hop'); void sp.offsetWidth; sp.classList.add('hop'); }
+  mapEl.scrollTo({ left: nodeX(i) - mapEl.clientWidth / 2, behavior: animate ? 'smooth' : 'auto' });
+}
+mapEl.addEventListener('click', e => { const b = e.target.closest('[data-go]'); if (b) scrollToISO(b.dataset.go, true); });
+
+/* ---- focus: the centred card pops up, others shrink; hero hops stage to stage ---- */
+function updateFocus(){
+  const mid = deck.scrollLeft + deck.clientWidth / 2; let best = null, bd = 1e9;
+  for (const c of deck.children){ const dd = Math.abs(c.offsetLeft - deck.offsetLeft + c.offsetWidth / 2 - mid); if (dd < bd){ bd = dd; best = c; } }
+  if (!best) return;
+  const iso = best.dataset.iso, changed = iso !== focusIso;
+  deck.querySelectorAll('.card.focus').forEach(c => c.classList.remove('focus'));
+  best.classList.add('focus');
+  if (changed){
+    focusIso = iso;
+    best.classList.add('enter'); setTimeout(() => best.classList.remove('enter'), 600);
+    moveHero(true);
+  }
+}
+let raf = 0;
+deck.addEventListener('scroll', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(updateFocus); }, { passive: true });
+
+/* ---- motivation bar ---- */
+function setMotive(){
+  const el = document.getElementById('motive'), s = computeStats(), t = todayISO();
+  const done = keyBoxesDone(getDay(t), 0, t), need = 7 - (s.streak % 7), nxt = NAMES[Math.min(s.level, 5)];
+  const dn = dayNoOf(new Date(t + 'T00:00:00'));
+  let main;
+  if (t > LAST_ISO) main = '🏆 Journey complete — so proud of you both!';
+  else if (done === 4) main = '⭐ Today is won! Rest well, Jaanu 💗';
+  else if (s.streak >= 3) main = '🔥 ' + s.streak + ' days in a row — protect the streak today!';
+  else main = pick(['💗 Every perfect day is a step closer. You have got this!','🌱 Slow and steady — one day, one level.','🎯 Four boxes = one star. Start with the easiest!'], dn);
+  el.innerHTML = '<b>' + main + '</b><span>' + (done < 4 ? (4 - done) + ' box' + (4 - done > 1 ? 'es' : '') + ' left today · ' : '') + need + ' perfect day' + (need > 1 ? 's' : '') + ' to reach ' + nxt + '</span>';
+}
+
+/* ---- level complete + progress hooks ---- */
+const WIN_MSGS = ['You crushed it! 💪','That is a perfect day — keep rolling! 🚀','Look at you go! 🌟','Another level cleared! 💗'];
+function afterChange(iso, wasPerfect){
+  const p = isPerfect(iso);
+  if (p && !wasPerfect) levelComplete(iso);
+  else if (!wasPerfect){ const dn = keyBoxesDone(getDay(iso), 0, iso); if (dn === 3 && iso === todayISO()) banner('Almost there! 🏁', 'Just one box left for today\'s star.'); }
+}
+function levelComplete(iso){
+  const n = dayNoOf(new Date(iso + 'T00:00:00')), ov = document.getElementById('lvl');
+  ov.innerHTML = '<div class="lvlbox"><div class="lvlt">Level ' + n + ' complete!</div><div class="lvlstars"><span>⭐</span><span>⭐</span><span>⭐</span></div><div class="lvlm">' + pick(WIN_MSGS, n) + '</div><button id="lvlGo">Next level ▶</button></div>';
+  ov.classList.add('show'); confetti(); try { navigator.vibrate && navigator.vibrate([60, 40, 60]); } catch(e){}
+  let gone = false;
+  const go = () => {
+    if (gone) return; gone = true; ov.classList.remove('show');
+    const nxt = isoOf(addDays(new Date(iso + 'T00:00:00'), 1));
+    if (nxt <= LAST_ISO) scrollToISO(nxt, true);
+    checkMilestone();
+  };
+  document.getElementById('lvlGo').onclick = go; setTimeout(go, 3200);
+}
+
+/* ---- notifications: in-app banner always; system notification when allowed ---- */
+const LS_NOTI = 'jaanu_noti_v1';
+let noti = { on: false, am: '08:00', pm: '20:30', fired: {} };
+try { Object.assign(noti, JSON.parse(localStorage.getItem(LS_NOTI) || '{}')); } catch(e){}
+const saveNoti = () => { try { localStorage.setItem(LS_NOTI, JSON.stringify(noti)); } catch(e){} };
+let bannerT = 0;
+function banner(title, body){
+  const b = document.getElementById('banner');
+  b.innerHTML = '<b>' + title + '</b><span>' + body + '</span>'; b.classList.add('show');
+  clearTimeout(bannerT); bannerT = setTimeout(() => b.classList.remove('show'), 6000);
+}
+document.getElementById('banner').addEventListener('click', e => e.currentTarget.classList.remove('show'));
+function notify(title, body){
+  banner(title, body);
+  if (!noti.on || !('Notification' in window) || Notification.permission !== 'granted') return;
+  const opts = { body, icon: 'icon-192.png', badge: 'icon-192.png', tag: 'jaanu', vibrate: [80, 40, 80] };
+  try {
+    navigator.serviceWorker.getRegistration().then(r => { if (r && r.showNotification) r.showNotification(title, opts); else new Notification(title, opts); });
+  } catch(e){ try { new Notification(title, opts); } catch(_){} }
+}
+function missingList(iso){
+  const d = getDay(iso), m = [];
+  if (d.gutka === null || d.gutka > taperTarget(new Date(iso + 'T00:00:00'))) m.push('gutka');
+  if (d.alcohol !== false) m.push('alcohol');
+  if (!d.walk) m.push('walk'); if (!d.food) m.push('food');
+  return m;
+}
+function tickReminders(){
+  if (!noti.on) return;
+  const n = new Date(), t = todayISO(), mins = n.getHours() * 60 + n.getMinutes();
+  [['am', 'Good morning, Jaanu ☀️'], ['pm', 'Evening check-in 🌙']].forEach(([k, title]) => {
+    const [h, m] = noti[k].split(':').map(Number), diff = mins - (h * 60 + m), key = t + k;
+    if (noti.fired[key] || diff < 0 || diff > 180) return;
+    noti.fired = Object.fromEntries(Object.entries(noti.fired).filter(([x]) => x.startsWith(t))); noti.fired[key] = 1; saveNoti();
+    const left = missingList(t).length, s = computeStats();
+    if (k === 'am') notify(title, 'New level today! ' + pick(['Four boxes = one star ⭐','Start with a walk 🚶‍♀️','Small steps, big wins 💗'], dayNoOf(n)) + (s.streak ? ' · ' + s.streak + '-day streak 🔥' : ''));
+    else notify(title, left === 0 ? 'Perfect day already — proud of you! ⭐' : left + ' box' + (left > 1 ? 'es' : '') + ' left to earn today\'s star. You can still do it! 💪');
+  });
+}
+setInterval(tickReminders, 20000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) tickReminders(); });
+
+const sheet = document.getElementById('sheet');
+function refreshHint(){
+  const h = document.getElementById('notiHint'), sup = 'Notification' in window;
+  h.textContent = !sup ? 'This browser has no system notifications — you will still see in-app banners.'
+    : noti.on && Notification.permission === 'granted' ? '✅ Reminders are ON. They arrive while Jaanu is open or installed on the home screen.'
+    : Notification.permission === 'denied' ? 'Notifications are blocked in phone settings — in-app banners still work.' : 'Tap Save to turn reminders on and allow notifications.';
+}
+document.getElementById('bellBtn').addEventListener('click', () => {
+  document.getElementById('amT').value = noti.am; document.getElementById('pmT').value = noti.pm; refreshHint(); sheet.classList.add('show');
+});
+sheet.addEventListener('click', e => { if (e.target === sheet) sheet.classList.remove('show'); });
+document.getElementById('notiSave').addEventListener('click', async () => {
+  noti.am = document.getElementById('amT').value || '08:00'; noti.pm = document.getElementById('pmT').value || '20:30'; noti.on = true;
+  if ('Notification' in window && Notification.permission === 'default'){ try { await Notification.requestPermission(); } catch(e){} }
+  saveNoti(); refreshHint(); sheet.classList.remove('show'); toast('Reminders saved 🔔');
+});
+document.getElementById('notiTest').addEventListener('click', async () => {
+  if ('Notification' in window && Notification.permission === 'default'){ try { await Notification.requestPermission(); } catch(e){} }
+  const was = noti.on; noti.on = true; notify('Jaanu 💗', 'This is how your reminders will look!'); noti.on = was;
+});
+
 /* ---------- boot ---------- */
 window.__jaanuRerender = () => { const cur = todayISO(); renderAll(); scrollToISO(cur, false); };
 renderAll();
 scrollToISO(todayISO(), false);
+updateFocus();
+setMotive();
 checkMilestone();
+tickReminders();
 setInterval(checkMilestone, 30000);
 /* Refresh header stats if the app stays open past midnight (no forced scroll). */
 setInterval(() => { renderHeader(); }, 60000);
@@ -591,7 +843,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
 
 <script type="module">
 /* =====================================================================
-   Firebase sync — goalpara-leave project (same as the APDCL leave app).
+   Firebase sync — jaanu-ac156 project (Amit's own Firebase project).
    Anonymous sign-in: no login needed. If this fails (e.g. Anonymous
    auth not enabled in the console, or offline), the app keeps working
    fully on localStorage and retries later. Nothing here ever blocks
@@ -674,6 +926,47 @@ try {
 } catch(e){
   /* Firebase CDN unreachable — app keeps working on localStorage only. */
 }
+</script>
+<script>
+/* Install button — the browser only offers the install prompt when it
+   decides the app is installable (beforeinstallprompt). There was no
+   button in the app at all, which is why nothing showed. If the prompt
+   event never fires (e.g. iPhone Safari), the button still appears and
+   shows the manual install steps instead. */
+(function () {
+  var btn = document.getElementById('installBtn');
+  if (!btn) return;
+  var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (isStandalone) return; // already installed — no button needed
+  var deferred = null;
+  function show() { btn.style.display = ''; }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferred = e;
+    show();
+  });
+  // Fallback: if no prompt arrives within a few seconds, still offer manual steps.
+  setTimeout(show, 3000);
+  btn.addEventListener('click', function () {
+    if (deferred) {
+      deferred.prompt();
+      if (deferred.userChoice) {
+        deferred.userChoice.then(function () { btn.style.display = 'none'; }).catch(function () {});
+      }
+      deferred = null;
+      return;
+    }
+    var iOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    var msg = iOS
+      ? 'iPhone: tap Share (the square with the arrow) → "Add to Home Screen".'
+      : 'Android: tap the ⋮ menu → "Install app" (or "Add to Home screen").';
+    var sheet = document.createElement('div');
+    sheet.style.cssText = 'position:fixed;inset:0;z-index:120;background:rgba(59,42,51,.55);display:flex;align-items:flex-end;';
+    sheet.innerHTML = '<div style="background:#fff;width:100%;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));font-size:15px;line-height:1.5"><b>Install Jaanu on your home screen 📲</b><br><br>' + msg + '<br><br><button id="installClose" style="width:100%;border:0;background:#ec4899;color:#fff;font-weight:800;font-size:15px;border-radius:999px;padding:12px;cursor:pointer">Got it</button></div>';
+    sheet.addEventListener('click', function (e) { if (e.target === sheet || e.target.id === 'installClose') sheet.remove(); });
+    document.body.appendChild(sheet);
+  });
+})();
 </script>
 </body>
 </html>
