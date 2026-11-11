@@ -225,6 +225,32 @@
   .dots i.p{background:#f0627f;} .dots i.f{background:#9fd3d6;} .dots i.o{background:#3b9aa0;} .dots i.t{outline:2px solid #1f2937;outline-offset:1px;}
   .cyl{font-size:13.5px;margin:3px 0;} .cyadd{display:flex;gap:8px;margin-top:8px;} .cyadd input{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px;} .cyadd button{border:0;background:var(--pink);color:#fff;font-weight:800;border-radius:10px;padding:0 14px;}
 
+  /* ===== v5.3 dark mode ===== */
+  body.dark{--ink:#f3e7ec; --muted:#c9a8b8; --line:#4a2b3d; --card:#2a1a24; --bg:#171019; --pink-l:#4a2340; --shadow:0 2px 10px rgba(0,0,0,.45);}
+  body.dark{background:linear-gradient(180deg,#241423,#171019 55%,#120e1a) fixed;}
+  body.dark header{background:linear-gradient(135deg,#9d174d,#5b21b6);}
+  body.dark .app-row p{color:#fbcfe8;}
+  body.dark .stat, body.dark .bar-wrap, body.dark .chip, body.dark .sync-dot, body.dark section.info, body.dark .bottomnav, body.dark .bottomnav button, body.dark .note, body.dark .stepper button, body.dark .tog, body.dark .seg, body.dark .cyadd input, body.dark .moods button{background:var(--card); color:var(--ink); border-color:var(--line);}
+  body.dark .chip.tsh{background:#3f2f10;border-color:#713f12;color:#fde68a;}
+  body.dark .chip.tsh.done{background:#14532d;border-color:#16a34a;color:#bbf7d0;}
+  body.dark .chip.trip{background:#172554;border-color:#1d4ed8;color:#bfdbfe;}
+  body.dark .chip.gum{background:#052e16;border-color:#166534;color:#bbf7d0;}
+  body.dark #motive{background:linear-gradient(135deg,#3b1f33,#241a2e); border-color:var(--line);}
+  body.dark #motive b{color:#f9a8d4;}
+  body.dark .says{color:#f9a8d4;}
+  body.dark .bar{background:#4a2340;}
+  body.dark .ring b{background:#2a1a24;color:var(--ink);}
+  body.dark .dots i{background:#4b2b40;}
+  body.dark .fert{background:#3b1f33;}
+  body.dark .stepper button{color:#f9a8d4;}
+  body.dark .tog.on{background:linear-gradient(180deg,#14532d,#16a34a);color:#dcfce7;border-color:#16a34a;}
+  body.dark .seg button.on-no{background:linear-gradient(180deg,#14532d,#16a34a);color:#dcfce7;}
+  body.dark table.taper, body.dark table.taper td, body.dark table.taper th{color:var(--ink); border-color:var(--line);}
+  body.dark .card::before{filter:brightness(.75);}
+  body.dark #bgfx span{opacity:.15;}
+  body.dark #celebrate{color:#451a03;}
+  body.dark .bottomnav{box-shadow:0 -6px 20px rgba(0,0,0,.5);}
+
   #motive{background:linear-gradient(135deg,#fdf2f8,#ede9fe 60%,#e0f2fe);border:2px solid #f9a8d4;} #motive b{font-size:16px;}
   .says{display:block;margin-top:8px;padding-top:8px;border-top:1px dashed #f9a8d4;font-style:italic;color:#6b2145;font-size:13px;}
   #tools{display:flex;gap:7px;margin:10px 14px 0;overflow-x:auto;scrollbar-width:none;}
@@ -324,6 +350,7 @@
     <span class="sync-dot" id="syncDot">● saved on this phone</span>
     <button class="bell" id="bellBtn" aria-label="Reminders">🔔</button>
     <button class="bell" id="installBtn" aria-label="Install app" title="Install app" style="display:none">⬇️</button>
+    <button class="bell" id="darkBtn" aria-label="Dark mode" title="Dark mode">🌙</button>
   </div>
   <div class="stat-grid">
     <div class="stat"><b id="stStreak">0 🔥</b><span>day streak</span></div>
@@ -350,6 +377,7 @@
 <div id="deck" aria-label="Daily check-in cards"></div>
 
 <section class="info" id="cycle"></section>
+<section class="info" id="reports"></section>
 <section class="info" id="progress"></section>
 <section class="info">
   <h2>How Jaanu works 📒</h2>
@@ -506,6 +534,22 @@ function daysLeft(){
    Refreshed from Firebase whenever the meta doc arrives (see __jaanuMeta). */
 let HIST = [];
 try { HIST = (JSON.parse(localStorage.getItem('jaanu_meta_v1') || '{}').hist) || []; } catch(e){}
+/* Reports (lab & scan results) live in Firebase too (jaanu_meta/shared -> reports),
+   same pattern as HIST: local copy from the cached meta, refreshed when it arrives. */
+let REPORTS = [];
+try { REPORTS = (JSON.parse(localStorage.getItem('jaanu_meta_v1') || '{}').reports) || []; } catch(e){}
+function renderReports(){
+  const el = document.getElementById('reports'); if (!el) return;
+  if (!REPORTS.length){ el.innerHTML = '<h2>📋 Reports</h2><div class="cyl">No reports saved yet.</div>'; return; }
+  let h = '<h2>📋 Reports</h2><div class="small">Latest lab & scan results — a doctor still needs to read them.</div>';
+  REPORTS.forEach(r => {
+    h += '<div class="cyl" style="margin-top:10px"><b>' + escAttr(r.title || '') + '</b> · ' + escAttr(r.date || '') +
+      '<br><span style="font-size:15px;font-weight:700">' + escAttr(r.value || '') + '</span>' +
+      (r.ref ? ' <span class="small">' + escAttr(r.ref) + '</span>' : '') +
+      (r.note ? '<br><span class="small">' + escAttr(r.note) + '</span>' : '') + '</div>';
+  });
+  el.innerHTML = h;
+}
 function periodDaySet(){
   const st = new Set();
   HIST.forEach(h => { for (let i = 0; i < (h.days || 0); i++) st.add(isoOf(addDays(new Date(h.start + 'T00:00:00'), i))); });
@@ -629,7 +673,7 @@ function renderAll(){
   renderHeader();
   buildMap();
   const f = cardEl(focusIso || todayISO()); if (f) f.classList.add('focus');
-  setMotive(); renderProgress(); renderCycle();
+  setMotive(); renderProgress(); renderCycle(); renderReports();
 }
 function renderHeader(){
   const s = computeStats();
@@ -977,6 +1021,7 @@ window.__jaanuMeta = m => {
   if (m.rewards) rewards = m.rewards;
   if (m.freeze){ settings.freeze = m.freeze; renderHeader(); }
   if (m.hist){ HIST = m.hist; fertileSet = fertileWindows(); renderAll(); }
+  if (m.reports){ REPORTS = m.reports; renderReports(); }
   const e = m.event;
   if (e && e.from !== me && e.ts > lastEvt){ lastEvt = e.ts; try { localStorage.setItem('jaanu_evt', e.ts); } catch(_){} notify(e.type === 'cheer' ? '💗 Cheer for you!' : '⭐ Partner update', e.text); chime(); speak(e.text.replace(/[^\w\s.,'!-]/g, '')); }
   setMotive();
@@ -1182,6 +1227,13 @@ document.getElementById('tWalk').addEventListener('click', () => {
 });
 setInterval(wkUpdate, 15000); wkUpdate();
 (function(){ const w = document.createElement('div'); w.id = 'bgfx'; for (let i = 0; i < 9; i++){ const x = document.createElement('span'); x.textContent = ['💗','✨','⭐','🌸'][i % 4]; x.style.cssText = 'left:' + (i * 11 + 3) + '%;animation-delay:' + (i * 1.7) + 's;animation-duration:' + (12 + i % 4 * 3) + 's;font-size:' + (14 + i % 3 * 6) + 'px'; w.appendChild(x); } document.body.prepend(w); })();
+
+/* ===================== v5.3: dark mode ===================== */
+let darkOn = false;
+try { const s = localStorage.getItem('jaanu_dark'); darkOn = s === '1' ? true : s === '0' ? false : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches); } catch(e){}
+function applyDark(){ document.body.classList.toggle('dark', darkOn); const b = document.getElementById('darkBtn'); if (b) b.textContent = darkOn ? '☀️' : '🌙'; }
+document.getElementById('darkBtn').addEventListener('click', () => { darkOn = !darkOn; try { localStorage.setItem('jaanu_dark', darkOn ? '1' : '0'); } catch(e){} applyDark(); });
+applyDark();
 
 /* ---------- boot ---------- */
 window.__jaanuRerender = () => { renderAll(); scrollToISO(focusIso || todayISO(), false); };
