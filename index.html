@@ -499,11 +499,10 @@ function daysLeft(){
 }
 
 /* ---------- fertile window (estimate, from logged period starts) ---------- */
-/* Flow history (from her Flow app): [period start, days of bleeding] */
-const HIST = [['2026-05-09',4],['2026-06-30',4],['2026-08-01',4],['2026-09-04',4],['2026-10-03',4],['2026-11-05',5]];
+/* Period history lives in Firebase (jaanu_meta/shared -> hist), NOT in this file. */
 function periodDaySet(){
   const st = new Set();
-  HIST.forEach(([s0, n]) => { for (let i = 0; i < n; i++) st.add(isoOf(addDays(new Date(s0 + 'T00:00:00'), i))); });
+  (meta.hist || []).forEach(h => { for (let i = 0; i < (h.days || 0); i++) st.add(isoOf(addDays(new Date(h.start + 'T00:00:00'), i))); });
   Object.keys(days).forEach(i => { if (days[i].period) st.add(i); });
   return st;
 }
@@ -971,6 +970,7 @@ window.__jaanuMeta = m => {
   meta = Object.assign(meta, m); try { localStorage.setItem(LS_META, JSON.stringify(meta)); } catch(e){}
   if (m.rewards) rewards = m.rewards;
   if (m.freeze){ settings.freeze = m.freeze; renderHeader(); }
+  if (m.hist){ fertileSet = fertileWindows(); renderAll(); }
   const e = m.event;
   if (e && e.from !== me && e.ts > lastEvt){ lastEvt = e.ts; try { localStorage.setItem('jaanu_evt', e.ts); } catch(_){} notify(e.type === 'cheer' ? '💗 Cheer for you!' : '⭐ Partner update', e.text); chime(); speak(e.text.replace(/[^\w\s.,'!-]/g, '')); }
   setMotive();
@@ -1143,7 +1143,9 @@ function starPings(){ try { [0, .25, .5].forEach((d, i) => tone(NOTE[4 + i * 2] 
 const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const fs = iso => { const d = new Date(iso + 'T00:00:00'); return d.getDate() + ' ' + mon[d.getMonth()]; };
 function renderCycle(){
-  const el = document.getElementById('cycle'), ci = cycleInfo(), t = todayISO(), ps = periodDaySet(), lastD = new Date(ci.last + 'T00:00:00');
+  const el = document.getElementById('cycle'), ci = cycleInfo(), t = todayISO(), ps = periodDaySet();
+  if (!ci.starts.length){ el.innerHTML = '<h2>🌸 Cycle tracker</h2><div class="cyl">No period history yet — add your last period start below and the estimate will appear.</div><div class="cyadd"><input type="date" id="cyDate"><button id="cyAdd">+ Add old period start</button></div>'; return; }
+  const lastD = new Date(ci.last + 'T00:00:00');
   const day = Math.round((new Date(t + 'T00:00:00') - lastD) / DAY_MS) + 1;
   let dots = ''; const n = Math.max(ci.med, day);
   for (let k = 0; k < n; k++){ const iso = isoOf(addDays(lastD, k)); dots += '<i class="' + (ps.has(iso) ? 'p' : iso === ci.ovNext ? 'o' : ci.fert.has(iso) ? 'f' : '') + (iso === t ? ' t' : '') + '"></i>'; }
