@@ -1,0 +1,88 @@
+=========================================================================
+JAANU — Firestore rules for the `jaanu_days` collection
+Project: goalpara-leave (same project as the APDCL Leave Portal)
+=========================================================================
+
+AUTH DECISION (why Anonymous, not the leave app's email/password login)
+-------------------------------------------------------------------------
+The leave portal logs people in with ERP + password, because it is an
+office app with employee accounts. Jaanu is a personal tracker for one
+person (Prity) on her own phone — she must NOT need an office login,
+and there is no account to create for her. So Jaanu signs in
+ANONYMOUSLY (Firebase Auth -> Anonymous). No password, no login screen:
+the phone gets an anonymous user id automatically and syncs in the
+background. If Anonymous sign-in is NOT enabled, the app still works
+fully on the phone (localStorage) and shows "saved on this phone —
+will sync later" until it is enabled.
+
+Console steps (do these in one session — parent, see README too):
+  1. https://console.firebase.google.com -> project "goalpara-leave"
+  2. Build -> Authentication -> Sign-in method -> Anonymous -> Enable -> Save
+  3. Build -> Authentication -> Settings -> Authorized domains
+     -> make sure "amtic50.github.io" is listed (it should already be
+        there from the leave portal; if Anonymous sign-in fails with
+        "auth/unauthorized-domain", add it here)
+  4. Build -> Firestore Database -> Rules tab -> paste the block below
+     INSIDE  match /databases/{database}/documents { ... }
+     and BEFORE the catch-all deny line:
+        match /{document=**} { allow read, write: if false; }
+  5. Click Publish.
+
+WHAT THE RULE DOES
+------------------
+- One document per day, id = YYYY-MM-DD (e.g. 2026-11-11).
+- Any signed-in user (anonymous counts) can read and write day
+  check-ins. One household uses this project, and the data is only
+  daily check-in boxes — but note: anyone who opens the public
+  GitHub Pages URL gets an anonymous id too, so keep the URL within
+  the family (do not publish the link publicly).
+- Field validation: gutka 0-6, gum 0-24, alcohol/walk/food/period are
+  booleans, mood is text, note is text <= 120 chars. Deletes are
+  refused. This limits junk writes if the link ever leaks.
+
+PASTE THIS BLOCK (inside match /databases/{database}/documents { ... }):
+-------------------------------------------------------------------------
+
+  // ---- Jaanu (Prity's 3-month plan tracker) ----
+  // Collection: jaanu_days — one document per day, id = YYYY-MM-DD.
+  // Auth: Anonymous sign-in (enable it under Authentication -> Sign-in method).
+  match /jaanu_days/{date} {
+    allow read: if request.auth != null;
+
+    allow create, update: if request.auth != null
+      && date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+      && request.resource.data.date == date
+      && (request.resource.data.gutka == null
+          || (request.resource.data.gutka is int
+              && request.resource.data.gutka >= 0
+              && request.resource.data.gutka <= 6))
+      && (request.resource.data.gum == null
+          || (request.resource.data.gum is int
+              && request.resource.data.gum >= 0
+              && request.resource.data.gum <= 24))
+      && (request.resource.data.alcohol == null
+          || request.resource.data.alcohol is bool)
+      && (request.resource.data.walk == null
+          || request.resource.data.walk is bool)
+      && (request.resource.data.food == null
+          || request.resource.data.food is bool)
+      && (request.resource.data.period == null
+          || request.resource.data.period is bool)
+      && (request.resource.data.mood == null
+          || request.resource.data.mood is string)
+      && (request.resource.data.note == null
+          || (request.resource.data.note is string
+              && request.resource.data.note.size() <= 120));
+
+    allow delete: if false;
+  }
+  // ---- end Jaanu ----
+
+-------------------------------------------------------------------------
+SIMPLER FALLBACK (only if the validated block above ever gives a
+"permission denied" on a real save — the app keeps working locally
+either way, but sync needs a rule that allows the write):
+  match /jaanu_days/{date} {
+    allow read, write: if request.auth != null;
+  }
+=========================================================================

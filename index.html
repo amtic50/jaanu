@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jaanu — 3-Month Plan</title>
+<meta name="description" content="Prity's 3-month pregnancy-prep tracker. No medicine — gutka taper, walks, food, sleep and period tracking.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ec4899">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --pink:#ec4899; --pink-d:#db2777; --pink-l:#fce7f3; --pink-xl:#fff1f2;
+    --ink:#3b2a33; --muted:#8a6d7d; --line:#f3d9e6;
+    --green:#16a34a; --green-l:#dcfce7; --gold:#f59e0b; --gold-l:#fef3c7;
+    --blue:#0284c7; --card:#ffffff; --bg:#fff7f9;
+    --shadow:0 2px 10px rgba(219,39,119,.12);
+    --radius:18px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:15px; line-height:1.45;
+    padding-bottom:86px; overscroll-behavior-x:none;
+  }
+  /* ---------- header ---------- */
+  header{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,#fdf2f8,#fff7f9 92%);
+    border-bottom:1px solid var(--line);padding:10px 14px 8px;}
+  .app-row{display:flex;align-items:center;gap:10px;}
+  .app-row img{width:44px;height:44px;border-radius:12px;box-shadow:var(--shadow);}
+  .app-row h1{font-size:21px;margin:0;line-height:1.1;}
+  .app-row h1 span{color:var(--pink-d);}
+  .app-row p{margin:1px 0 0;font-size:12px;color:var(--muted);}
+  .sync-dot{margin-left:auto;font-size:11px;color:var(--muted);white-space:nowrap;
+    background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 8px;}
+  .sync-dot.ok{color:var(--green);}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px;}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:7px 4px;text-align:center;box-shadow:var(--shadow);}
+  .stat b{display:block;font-size:17px;line-height:1.15;}
+  .stat span{font-size:10.5px;color:var(--muted);display:block;}
+  .bar-wrap{margin-top:9px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 10px;box-shadow:var(--shadow);}
+  .bar-label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;}
+  .bar{height:9px;background:var(--pink-l);border-radius:99px;margin-top:6px;overflow:hidden;}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--pink),#f472b6);border-radius:99px;transition:width .5s;}
+  .chips{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap;}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;}
+  .chip.tsh{background:#fffbeb;border-color:#fde68a;}
+  .chip.tsh.done{background:var(--green-l);border-color:#86efac;}
+  .chip.trip{background:#e0f2fe;border-color:#bae6fd;}
+  .chip.gum{background:#f0fdf4;border-color:#bbf7d0;}
+  /* ---------- celebration ---------- */
+  #celebrate{display:none;margin:10px 14px 0;background:linear-gradient(135deg,#fde68a,#fbcfe8);
+    border:2px solid var(--gold);border-radius:var(--radius);padding:12px 14px;text-align:center;
+    font-weight:800;font-size:16px;box-shadow:var(--shadow);}
+  #celebrate small{display:block;font-weight:600;font-size:12px;color:#7c2d12;margin-top:2px;}
+  .confetti-bit{position:fixed;width:9px;height:14px;top:-20px;z-index:99;pointer-events:none;border-radius:2px;
+    animation:fall 2.6s ease-in forwards;}
+  @keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:.2;}}
+  /* ---------- deck ---------- */
+  #deck{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:16px 14px 6px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  #deck::-webkit-scrollbar{display:none;}
+  .card{flex:0 0 86vw;max-width:420px;scroll-snap-align:center;background:var(--card);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:14px 14px 16px;position:relative;}
+  .card.today{border:2px solid var(--pink);box-shadow:0 4px 18px rgba(236,72,153,.28);}
+  .card.future{opacity:.62;}
+  .card.trip{background:linear-gradient(180deg,#f0f9ff,#fff);}
+  .card-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .card-head .dow{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+  .card-head .date{font-size:19px;font-weight:800;}
+  .pill{margin-left:auto;font-size:11px;font-weight:800;padding:4px 9px;border-radius:999px;white-space:nowrap;}
+  .pill.m1{background:#fce7f3;color:#be185d;} .pill.m2{background:#e0e7ff;color:#3730a3;}
+  .pill.m3{background:#dcfce7;color:#166534;} .pill.trip{background:#bae6fd;color:#075985;}
+  .today-tag{font-size:11px;font-weight:800;color:#fff;background:var(--pink);border-radius:999px;padding:3px 8px;}
+  .sub{font-size:12px;color:var(--muted);margin-top:2px;}
+  .fert{margin-top:8px;background:#fdf2f8;border:1px dashed var(--pink);border-radius:10px;
+    padding:7px 9px;font-size:12.5px;font-weight:700;}
+  .fert.wait{background:#f8fafc;border-color:#cbd5e1;color:#475569;}
+  /* completion */
+  .complete{margin-top:10px;}
+  .complete .row{display:flex;justify-content:space-between;font-size:12px;font-weight:700;}
+  .complete .bar{margin-top:5px;}
+  .perfect{color:var(--gold);font-weight:800;font-size:13px;margin-top:6px;}
+  /* rows */
+  .rowline{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid #fdf2f8;}
+  .rowline:first-of-type{border-top:none;}
+  .rowline .lbl{flex:1;}
+  .rowline .lbl b{font-size:14px;display:block;}
+  .rowline .lbl small{color:var(--muted);font-size:11.5px;}
+  .stepper{display:flex;align-items:center;gap:2px;}
+  .stepper button{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);
+    background:#fff;font-size:19px;font-weight:800;color:var(--pink-d);cursor:pointer;}
+  .stepper .val{min-width:38px;text-align:center;font-size:18px;font-weight:800;}
+  .stepper .val.na{color:#cbd5e1;}
+  .seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;}
+  .seg button{border:0;background:#fff;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted);}
+  .seg button.on-no{background:var(--green-l);color:#166534;}
+  .seg button.on-yes{background:#fee2e2;color:#991b1b;}
+  .tog{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 13px;
+    font-size:13px;font-weight:700;cursor:pointer;color:var(--muted);}
+  .tog.on{background:var(--green-l);border-color:#86efac;color:#166534;}
+  .tog.on.period{background:var(--pink-l);border-color:#f9a8d4;color:#be185d;}
+  .moods{display:flex;gap:6px;}
+  .moods button{font-size:21px;border:1.5px solid transparent;background:#fff;border-radius:12px;
+    padding:4px 7px;cursor:pointer;line-height:1;}
+  .moods button.on{border-color:var(--pink);background:var(--pink-l);}
+  .note{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:14px;
+    font-family:inherit;outline:none;margin-top:2px;}
+  .note:focus{border-color:var(--pink);}
+  .notyet{font-size:12px;color:var(--muted);background:#f8fafc;border-radius:10px;padding:9px 10px;margin-top:10px;}
+  /* ---------- footer / nav ---------- */
+  .bottomnav{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);
+    display:flex;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));}
+  .bottomnav button{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;
+    padding:11px 6px;font-size:14px;font-weight:800;cursor:pointer;color:var(--ink);}
+  .bottomnav button.main{background:var(--pink);border-color:var(--pink);color:#fff;}
+  section.info{margin:14px;padding:14px;background:#fff;border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);}
+  section.info h2{font-size:16px;margin:0 0 6px;}
+  section.info h3{font-size:14px;margin:12px 0 4px;}
+  section.info p,section.info li{font-size:13.5px;color:#4a3a43;}
+  section.info ul{margin:4px 0;padding-left:20px;}
+  table.taper{border-collapse:collapse;width:100%;font-size:13px;margin-top:4px;}
+  table.taper td,table.taper th{border:1px solid var(--line);padding:6px 8px;text-align:left;}
+  table.taper th{background:var(--pink-l);}
+  .small{font-size:12px;color:var(--muted);}
+  #toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:#1f2937;color:#fff;
+    border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700;z-index:60;display:none;box-shadow:var(--shadow);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="app-row">
+    <img src="icon-192.png" alt="Jaanu">
+    <div>
+      <h1>💗 <span>Jaanu</span></h1>
+      <p>Prity's 3-month plan · 11 Nov 2026 – 20 Feb 2027</p>
+    </div>
+    <span class="sync-dot" id="syncDot">● saved on this phone</span>
+  </div>
+  <div class="stat-grid">
+    <div class="stat"><b id="stStreak">0 🔥</b><span>day streak</span></div>
+    <div class="stat"><b id="stStars">0 ⭐</b><span>stars earned</span></div>
+    <div class="stat"><b id="stLevel">Lv 1</b><span id="stLevelName">Seed</span></div>
+    <div class="stat"><b id="stLeft">–</b><span>days left</span></div>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-label"><span id="taperLabel">Gutka taper — this week ≤ 6/day</span><span id="taperPct">0%</span></div>
+    <div class="bar"><i id="taperBar" style="width:0%"></i></div>
+    <div class="bar-label" style="margin-top:5px"><span class="small">Goal: 0 gutka from 11 Jan 2027</span><span class="small" id="daysDone">Day 1 of 102</span></div>
+  </div>
+  <div class="chips">
+    <button class="chip tsh" id="tshChip">⏳ TSH result: pending — tap when it arrives</button>
+    <span class="chip trip">✈️ Jaipur trip 13–20 Feb</span>
+    <span class="chip gum">🍬 Nicotine gum 2 mg for cravings</span>
+  </div>
+</header>
+
+<div id="celebrate"></div>
+<div id="deck" aria-label="Daily check-in cards"></div>
+
+<section class="info">
+  <h2>How Jaanu works 📒</h2>
+  <p>Swipe the cards sideways — today's card is first. Tap a card's boxes each day. <b>4 key boxes</b> make a perfect day: gutka at or under the day's target, no alcohol, 30-minute walk, less-oil food. A perfect day earns ⭐ 1 star. 7 perfect days in a row = a new level.</p>
+  <h3>🎮 Levels</h3>
+  <ul>
+    <li>Lv 1 Seed · Lv 2 Sprout (7-day streak) · Lv 3 Bloom (14) · Lv 4 Glow (21) · Lv 5 Star (28) · Lv 6+ Superstar</li>
+    <li>Streak milestones (7, 14, 21, 30, 45, 60 days) get a celebration 🎉</li>
+  </ul>
+  <h3>🍬 Gutka taper — week by week</h3>
+  <table class="taper">
+    <tr><th>Week</th><th>Dates</th><th>Max gutka / day</th></tr>
+    <tr><td>1</td><td>11 – 17 Nov</td><td>6</td></tr>
+    <tr><td>2</td><td>18 – 24 Nov</td><td>5</td></tr>
+    <tr><td>3</td><td>25 Nov – 1 Dec</td><td>4</td></tr>
+    <tr><td>4</td><td>2 – 8 Dec</td><td>4</td></tr>
+    <tr><td>5</td><td>9 – 15 Dec</td><td>3</td></tr>
+    <tr><td>6</td><td>16 – 22 Dec</td><td>3</td></tr>
+    <tr><td>7</td><td>23 – 29 Dec</td><td>2</td></tr>
+    <tr><td>8</td><td>30 Dec – 5 Jan</td><td>2</td></tr>
+    <tr><td>9</td><td>6 – 10 Jan</td><td>1</td></tr>
+    <tr><td>10+</td><td>from 11 Jan</td><td><b>0 — stay at zero</b></td></tr>
+  </table>
+  <p class="small">Craving hits? Chew one 2 mg nicotine gum slowly instead of a gutka packet, and tap the gum counter. Gum is a helper for the taper — it is not a medicine for the liver or thyroid.</p>
+  <h3>🌸 Trying (Month 3)</h3>
+  <p>Log period days honestly. Jaanu estimates the fertile window from your logged period start (about cycle days 10–17) and marks those cards 🌸 — but only in Month 3, and only if gutka and alcohol are at zero and the checks (TSH result) are in. Otherwise Month 3 becomes a correction month and trying shifts one cycle. <b>Do not restart the thyroid tablet on your own.</b></p>
+  <h3>💾 Saving &amp; sync</h3>
+  <p class="small">Everything saves on this phone first — it works fully offline. When the phone is online it also syncs to the family Firebase (project goalpara-leave, collection <code>jaanu_days</code>). If sync is not set up yet you will see "saved on this phone — will sync later" and nothing is lost.</p>
+</section>
+
+<nav class="bottomnav">
+  <button id="prevBtn">◀ Prev</button>
+  <button class="main" id="todayBtn">📅 Today</button>
+  <button id="nextBtn">Next ▶</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+   JAANU — local-first tracker. No Firebase = still fully works.
+   ===================================================================== */
+'use strict';
+
+/* ---------- dates & plan ---------- */
+const START = new Date(2026, 10, 11);            // 11 Nov 2026 = Day 1
+const END   = new Date(2027, 1, 20);             // 20 Feb 2027 = Day 102 (trip week end)
+const M2_START = new Date(2026, 11, 11);         // Month 2
+const M3_START = new Date(2027, 0, 11);          // Month 3 ("Try")
+const TRIP_START = new Date(2027, 1, 13);        // Jaipur trip 13–20 Feb
+const DAY_MS = 86400000;
+
+function isoOf(d){ const m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0'); return d.getFullYear() + '-' + m + '-' + day; }
+function addDays(d, n){ const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function dayNoOf(d){ return Math.round((d - START) / DAY_MS) + 1; }
+function todayISO(){ const n = new Date(); return isoOf(new Date(n.getFullYear(), n.getMonth(), n.getDate())); }
+function fmtDate(d){
+  const wd = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()];
+  const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  return wd + ' ' + d.getDate() + ' ' + mo + ' ' + d.getFullYear();
+}
+function phaseOf(d, dayNo){
+  if (d >= TRIP_START) return {key:'trip', label:'✈️ Jaipur trip', cls:'trip'};
+  if (d >= M3_START)  return {key:'m3', label:'Month 3 · Try 🌸', cls:'m3'};
+  if (d >= M2_START)  return {key:'m2', label:'Month 2 · Consolidate', cls:'m2'};
+  return {key:'m1', label:'Month 1 · Stabilise', cls:'m1'};
+}
+/* Gutka taper targets by week (Day 1 = 11 Nov 2026). Zero from 11 Jan 2027. */
+const WEEK_TARGETS = [6, 5, 4, 4, 3, 3, 2, 2, 1];
+function taperTarget(d){
+  if (d >= M3_START) return 0;
+  const wk = Math.floor((dayNoOf(d) - 1) / 7);
+  return WEEK_TARGETS[Math.max(0, Math.min(wk, WEEK_TARGETS.length - 1))];
+}
+const TOTAL_DAYS = dayNoOf(END);
+
+/* ---------- storage (localStorage first) ---------- */
+const LS_KEY = 'jaanu_days_v1';
+const LS_SET = 'jaanu_settings_v1';
+const LS_PEND = 'jaanu_pending_v1';
+let days = {};
+let settings = { tsh: 'pending' };
+let pendingSync = {};   // iso -> true (waiting for cloud)
+try { days = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e){ days = {}; }
+try { settings = Object.assign({ tsh: 'pending' }, JSON.parse(localStorage.getItem(LS_SET) || '{}')); } catch(e){ }
+try { pendingSync = JSON.parse(localStorage.getItem(LS_PEND) || '{}'); } catch(e){ pendingSync = {}; }
+
+function saveLocal(){
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(days));
+    localStorage.setItem(LS_SET, JSON.stringify(settings));
+    localStorage.setItem(LS_PEND, JSON.stringify(pendingSync));
+  } catch(e){ /* storage full/blocked: app keeps working in memory */ }
+}
+function blankDay(iso){
+  return { gutka: null, gum: null, alcohol: null, walk: false, food: false, period: false, mood: null, note: '', updatedAt: 0 };
+}
+function getDay(iso){ if (!days[iso]) days[iso] = blankDay(iso); return days[iso]; }
+
+/* ---------- scoring (the game layer) ---------- */
+function keyBoxesDone(d, dayNo, iso){
+  /* Perfect day = 4 key boxes: gutka ≤ target, no alcohol, walk, less-oil food */
+  let done = 0;
+  if (d.gutka !== null && d.gutka <= taperTarget(new Date(iso + 'T00:00:00'))) done++;
+  if (d.alcohol === false) done++;
+  if (d.walk) done++;
+  if (d.food) done++;
+  return done; // out of 4
+}
+function isPerfect(iso){ return keyBoxesDone(getDay(iso), dayNoOf(new Date(iso + 'T00:00:00')), iso) === 4; }
+
+function computeStats(){
+  const tISO = todayISO();
+  let stars = 0;
+  Object.keys(days).forEach(iso => { if (iso >= '2026-11-11' && iso <= '2027-02-20' && isPerfect(iso)) stars++; });
+  /* streak: consecutive perfect days ending today, else ending yesterday */
+  let streak = 0;
+  let cursor = new Date(tISO + 'T00:00:00');
+  if (!isPerfect(tISO)) cursor = addDays(cursor, -1);
+  while (true){
+    const iso = isoOf(cursor);
+    if (cursor < START || !isPerfect(iso)) break;
+    streak++;
+    cursor = addDays(cursor, -1);
+  }
+  const level = Math.floor(streak / 7) + 1;
+  const levelNames = ['Seed','Sprout','Bloom','Glow','Star','Superstar'];
+  const levelName = levelNames[Math.min(level, 6) - 1] || 'Superstar';
+  return { stars, streak, level, levelName };
+}
+function daysLeft(){
+  const t = new Date(todayISO() + 'T00:00:00');
+  if (t > END) return 0;
+  return Math.round((END - t) / DAY_MS);
+}
+
+/* ---------- fertile window (estimate, from logged period starts) ---------- */
+function periodStarts(){
+  const isos = Object.keys(days).filter(iso => days[iso].period).sort();
+  const starts = [];
+  isos.forEach(iso => {
+    const prev = isoOf(addDays(new Date(iso + 'T00:00:00'), -1));
+    if (!days[prev] || !days[prev].period) starts.push(iso);
+  });
+  return starts;
+}
+function fertileWindows(){
+  /* From each logged period start: fertile ≈ start+9 .. start+16.
+     Plus one predicted cycle after the last logged start (+28d). */
+  const wins = [];
+  const starts = periodStarts();
+  starts.forEach(s => {
+    const base = new Date(s + 'T00:00:00');
+    for (let i = 9; i <= 16; i++) wins.push(isoOf(addDays(base, i)));
+  });
+  if (starts.length){
+    const last = new Date(starts[starts.length - 1] + 'T00:00:00');
+    const nextStart = addDays(last, 28);
+    for (let i = 9; i <= 16; i++) wins.push(isoOf(addDays(nextStart, i)));
+  }
+  return new Set(wins);
+}
+
+/* ---------- rendering ---------- */
+const deck = document.getElementById('deck');
+const MOODS = [['😄','happy'], ['🙂','ok'], ['😐','meh'], ['😟','low'], ['😢','sad']];
+let fertileSet = fertileWindows();
+
+function cardHTML(d, iso, dayNo){
+  const ph = phaseOf(d, dayNo);
+  const tISO = todayISO();
+  const isToday = iso === tISO;
+  const isFuture = d > new Date(tISO + 'T00:00:00');
+  const target = taperTarget(d);
+  const day = getDay(iso);
+  const done = keyBoxesDone(day, dayNo, iso);
+  const pct = Math.round(done / 4 * 100);
+  const perfect = done === 4;
+  const fertile = fertileSet.has(iso);
+  const inTry = d >= M3_START;
+  const dis = isFuture ? 'disabled' : '';
+  const gutkaVal = day.gutka === null ? '<span class="na">–</span>' : day.gutka;
+  const gumVal = day.gum === null ? '<span class="na">–</span>' : day.gum;
+
+  return '' +
+  '<article class="card' + (isToday ? ' today' : '') + (isFuture ? ' future' : '') + (ph.key === 'trip' ? ' trip' : '') + '" id="card-' + iso + '" data-iso="' + iso + '">' +
+    '<div class="card-head">' +
+      '<span class="dow">' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()] + '</span>' +
+      '<span class="date">' + d.getDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + '</span>' +
+      (isToday ? '<span class="today-tag">TODAY</span>' : '') +
+      '<span class="pill ' + ph.cls + '">' + ph.label + '</span>' +
+    '</div>' +
+    '<div class="sub">Day ' + dayNo + ' of ' + TOTAL_DAYS + ' · Gutka target ≤ <b>' + target + '</b>/day' +
+      (target === 0 ? ' · <b>stay at zero 🚫</b>' : '') + '</div>' +
+    (fertile
+      ? (inTry
+          ? '<div class="fert">🌸 Fertile window (estimate) — trying month. Gutka &amp; alcohol must be at zero.</div>'
+          : '<div class="fert wait">🌸 Fertile window (estimate) — still in the taper. Trying starts in Month 3.</div>')
+      : '') +
+    '<div class="complete">' +
+      '<div class="row"><span>Today\'s completion</span><span>' + pct + '% · ' + done + '/4 key boxes</span></div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      (perfect ? '<div class="perfect">⭐ Perfect day — star earned!</div>' : '') +
+    '</div>' +
+
+    '<div class="rowline"><div class="lbl"><b>🚬 Gutka packets</b><small>Target ≤ ' + target + ' today · chew gum instead of a packet</small></div>' +
+      '<div class="stepper"><button data-act="gutka-" data-iso="' + iso + '" ' + dis + '>−</button>' +
+      '<span class="val">' + gutkaVal + '</span>' +
+      '<button data-act="gutka+" data-iso="' + iso + '" ' + dis + '>+</button></div></div>' +
+
+    '<div class="rowline"><div class="lbl"><b>🍬 Nicotine gum (2 mg)</b><small>Pieces used today — one per craving, chew slowly</small></div>' +
+      '<div class="stepper"><button data-act="gum-" data-iso="' + iso + '" ' + dis + '>−</button>' +
+      '<span class="val">' + gumVal + '</span>' +
+      '<button data-act="gum+" data-iso="' + iso + '" ' + dis + '>+</button></div></div>' +
+
+    '<div class="rowline"><div class="lbl"><b>🍷 Alcohol today?</b><small>Plan: paused for both of you</small></div>' +
+      '<div class="seg"><button data-act="alc-no" data-iso="' + iso + '" class="' + (day.alcohol === false ? 'on-no' : '') + '" ' + dis + '>No 🙅</button>' +
+      '<button data-act="alc-yes" data-iso="' + iso + '" class="' + (day.alcohol === true ? 'on-yes' : '') + '" ' + dis + '>Yes</button></div></div>' +
+
+    '<div class="rowline"><div class="lbl"><b>🚶 30-min walk</b><small>Together if you can — even a slow one counts</small></div>' +
+      '<button class="tog' + (day.walk ? ' on' : '') + '" data-act="walk" data-iso="' + iso + '" ' + dis + '>' + (day.walk ? '✓ Done' : 'Tap when done') + '</button></div>' +
+
+    '<div class="rowline"><div class="lbl"><b>🥗 Less-oil food</b><small>Normal home food, just less oily / fried</small></div>' +
+      '<button class="tog' + (day.food ? ' on' : '') + '" data-act="food" data-iso="' + iso + '" ' + dis + '>' + (day.food ? '✓ Done' : 'Tap when done') + '</button></div>' +
+
+    '<div class="rowline"><div class="lbl"><b>🩸 Period day</b><small>Log it honestly — it finds the fertile window</small></div>' +
+      '<button class="tog period' + (day.period ? ' on' : '') + '" data-act="period" data-iso="' + iso + '" ' + dis + '>' + (day.period ? '✓ Period day' : 'Not today') + '</button></div>' +
+
+    '<div class="rowline"><div class="lbl"><b>💛 Mood</b><small>How is she feeling today?</small></div>' +
+      '<div class="moods">' + MOODS.map(m =>
+        '<button data-act="mood" data-iso="' + iso + '" data-mood="' + m[1] + '" class="' + (day.mood === m[1] ? 'on' : '') + '" ' + dis + ' title="' + m[1] + '">' + m[0] + '</button>'
+      ).join('') + '</div></div>' +
+
+    '<div class="rowline" style="display:block"><div class="lbl"><b>📝 One line for today</b></div>' +
+      '<input class="note" type="text" maxlength="120" placeholder="e.g. craving at 4pm — gum helped" value="' + escAttr(day.note || '') + '" data-act="note" data-iso="' + iso + '" ' + dis + '></div>' +
+
+    (isFuture ? '<div class="notyet">⏳ This day comes on ' + fmtDate(d) + '. You can fill it in then.</div>' : '') +
+  '</article>';
+}
+
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function renderAll(){
+  fertileSet = fertileWindows();
+  let html = '';
+  for (let i = 0; i < TOTAL_DAYS; i++){
+    const d = addDays(START, i);
+    html += cardHTML(d, isoOf(d), i + 1);
+  }
+  deck.innerHTML = html;
+  renderHeader();
+}
+function renderHeader(){
+  const s = computeStats();
+  document.getElementById('stStreak').textContent = s.streak + ' 🔥';
+  document.getElementById('stStars').textContent = s.stars + ' ⭐';
+  document.getElementById('stLevel').textContent = 'Lv ' + s.level;
+  document.getElementById('stLevelName').textContent = s.levelName;
+  document.getElementById('stLeft').textContent = daysLeft();
+  const t = new Date(todayISO() + 'T00:00:00');
+  const tgt = taperTarget(t > END ? END : t);
+  document.getElementById('taperLabel').textContent = 'Gutka taper — this week ≤ ' + tgt + '/day';
+  const pct = Math.round((6 - tgt) / 6 * 100);
+  document.getElementById('taperPct').textContent = pct + '% to zero';
+  document.getElementById('taperBar').style.width = pct + '%';
+  const dn = Math.min(Math.max(dayNoOf(t), 1), TOTAL_DAYS);
+  document.getElementById('daysDone').textContent = 'Day ' + dn + ' of ' + TOTAL_DAYS;
+  const tsh = document.getElementById('tshChip');
+  if (settings.tsh === 'done'){
+    tsh.classList.add('done');
+    tsh.textContent = '✓ TSH result is in — show it to the doctor';
+  } else {
+    tsh.classList.remove('done');
+    tsh.textContent = '⏳ TSH result: pending — tap when it arrives';
+  }
+  updateSyncDot();
+}
+function updateSyncDot(){
+  const el = document.getElementById('syncDot');
+  const n = Object.keys(pendingSync).length;
+  if (window.__jaanuCloud && window.__jaanuCloud.ready){
+    if (n > 0){ el.textContent = '↻ syncing ' + n + ' day(s)…'; el.classList.remove('ok'); }
+    else { el.textContent = '✓ synced'; el.classList.add('ok'); }
+  } else {
+    el.textContent = n > 0 ? '● saved on this phone — will sync later (' + n + ')' : '● saved on this phone';
+    el.classList.remove('ok');
+  }
+}
+
+/* ---------- interactions ---------- */
+function patchDay(iso, patch){
+  const d = getDay(iso);
+  Object.assign(d, patch);
+  d.updatedAt = Date.now();
+  saveLocal();
+  queueCloudSave(iso);
+  renderAll();
+  keepScroll(iso);
+}
+let lastScrollIso = null;
+function keepScroll(iso){
+  const el = document.getElementById('card-' + iso);
+  if (el) deck.scrollTo({ left: el.offsetLeft - deck.offsetLeft - 10, behavior: 'auto' });
+}
+deck.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn || btn.disabled) return;
+  const act = btn.dataset.act, iso = btn.dataset.iso;
+  const d = getDay(iso);
+  if (act === 'gutka-'){ d.gutka = (d.gutka === null ? 0 : Math.max(0, d.gutka - 1)); patchDay(iso, { gutka: d.gutka }); }
+  else if (act === 'gutka+'){ d.gutka = (d.gutka === null ? 1 : Math.min(6, d.gutka + 1)); patchDay(iso, { gutka: d.gutka }); }
+  else if (act === 'gum-'){ d.gum = (d.gum === null ? 0 : Math.max(0, d.gum - 1)); patchDay(iso, { gum: d.gum }); }
+  else if (act === 'gum+'){ d.gum = (d.gum === null ? 1 : Math.min(24, d.gum + 1)); patchDay(iso, { gum: d.gum }); }
+  else if (act === 'alc-no'){ patchDay(iso, { alcohol: false }); }
+  else if (act === 'alc-yes'){ patchDay(iso, { alcohol: true }); }
+  else if (act === 'walk'){ patchDay(iso, { walk: !d.walk }); }
+  else if (act === 'food'){ patchDay(iso, { food: !d.food }); }
+  else if (act === 'period'){ patchDay(iso, { period: !d.period }); }
+  else if (act === 'mood'){ patchDay(iso, { mood: d.mood === btn.dataset.mood ? null : btn.dataset.mood }); }
+});
+deck.addEventListener('change', (e) => {
+  const inp = e.target.closest('[data-act="note"]');
+  if (!inp) return;
+  patchDay(inp.dataset.iso, { note: inp.value.trim().slice(0, 120) });
+});
+deck.addEventListener('input', (e) => {
+  /* keep typing smooth: save note live without re-rendering the card */
+  const inp = e.target.closest('[data-act="note"]');
+  if (!inp) return;
+  const d = getDay(inp.dataset.iso);
+  d.note = inp.value.slice(0, 120);
+  d.updatedAt = Date.now();
+  saveLocal();
+  queueCloudSave(inp.dataset.iso);
+});
+
+document.getElementById('tshChip').addEventListener('click', () => {
+  settings.tsh = settings.tsh === 'done' ? 'pending' : 'done';
+  saveLocal();
+  renderHeader();
+  toast(settings.tsh === 'done' ? 'TSH result marked as received ✓' : 'TSH marked pending again');
+});
+
+/* ---------- nav ---------- */
+function cardEl(iso){ return document.getElementById('card-' + iso); }
+function scrollToISO(iso, smooth){
+  const el = cardEl(iso);
+  if (!el) return;
+  deck.scrollTo({ left: el.offsetLeft - deck.offsetLeft - 10, behavior: smooth ? 'smooth' : 'auto' });
+}
+function scrollByCard(dir){
+  const w = (cardEl(todayISO()) || deck.firstElementChild);
+  const step = w ? w.offsetWidth + 12 : 300;
+  deck.scrollBy({ left: dir * step, behavior: 'smooth' });
+}
+document.getElementById('prevBtn').addEventListener('click', () => scrollByCard(-1));
+document.getElementById('nextBtn').addEventListener('click', () => scrollByCard(1));
+document.getElementById('todayBtn').addEventListener('click', () => { renderAll(); scrollToISO(todayISO(), true); });
+
+/* ---------- celebrations ---------- */
+const MILESTONES = { 7:'🌱 7-day streak — Sprout level! Keep growing!', 14:'🌸 14-day streak — Bloom! Two weeks of wins!', 21:'✨ 21-day streak — Glow! Three weeks strong!', 30:'🏆 30-day streak — a full month, amazing!', 45:'💎 45-day streak — unstoppable!', 60:'👑 60-day streak — Superstar!' };
+let lastCelebrated = (function(){ try { return parseInt(localStorage.getItem('jaanu_last_celebrated') || '0', 10) || 0; } catch(e){ return 0; } })();
+function checkMilestone(){
+  const s = computeStats();
+  if (MILESTONES[s.streak] && s.streak !== lastCelebrated){
+    lastCelebrated = s.streak;
+    try { localStorage.setItem('jaanu_last_celebrated', String(s.streak)); } catch(e){}
+    const box = document.getElementById('celebrate');
+    box.innerHTML = '🎉 ' + MILESTONES[s.streak] + '<small>Tap the card and keep the streak alive tomorrow too.</small>';
+    box.style.display = 'block';
+    confetti();
+    setTimeout(() => { box.style.display = 'none'; }, 9000);
+  }
+}
+function confetti(){
+  const colors = ['#ec4899','#f59e0b','#16a34a','#0284c7','#a855f7','#f43f5e'];
+  for (let i = 0; i < 42; i++){
+    const bit = document.createElement('div');
+    bit.className = 'confetti-bit';
+    bit.style.left = Math.random() * 100 + 'vw';
+    bit.style.background = colors[i % colors.length];
+    bit.style.animationDelay = (Math.random() * 0.5) + 's';
+    document.body.appendChild(bit);
+    setTimeout(() => bit.remove(), 3400);
+  }
+}
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 2600);
+}
+
+/* ---------- cloud sync (filled in by the Firebase module below) ---------- */
+/* Debounced: rapid taps / note typing mark the day pending immediately but
+   only write to Firestore once things settle (1s quiet), so one edit = one write. */
+let cloudTimer = null;
+function queueCloudSave(iso){
+  pendingSync[iso] = true;
+  saveLocal();
+  updateSyncDot();
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(flushPending, 1000);
+}
+async function flushPending(){
+  if (!window.__jaanuCloud || !window.__jaanuCloud.ready) return;
+  for (const iso of Object.keys(pendingSync)){
+    try { await window.__jaanuCloud.save(iso, getDay(iso)); delete pendingSync[iso]; } catch(e){ /* keep pending, retry later */ }
+  }
+  saveLocal();
+  updateSyncDot();
+}
+window.addEventListener('online', flushPending);
+window.addEventListener('jaanu-cloud-ready', () => {
+  flushPending();
+  renderHeader();
+});
+
+/* ---------- boot ---------- */
+window.__jaanuRerender = () => { const cur = todayISO(); renderAll(); scrollToISO(cur, false); };
+renderAll();
+scrollToISO(todayISO(), false);
+checkMilestone();
+setInterval(checkMilestone, 30000);
+/* Refresh header stats if the app stays open past midnight (no forced scroll). */
+setInterval(() => { renderHeader(); }, 60000);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+
+<script type="module">
+/* =====================================================================
+   Firebase sync — goalpara-leave project (same as the APDCL leave app).
+   Anonymous sign-in: no login needed. If this fails (e.g. Anonymous
+   auth not enabled in the console, or offline), the app keeps working
+   fully on localStorage and retries later. Nothing here ever blocks
+   the check-in UI.
+   ===================================================================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCablwuJxaHcVpq0pawgRnfI9Zw7Gf9H40",
+  authDomain: "goalpara-leave.firebaseapp.com",
+  projectId: "goalpara-leave",
+  appId: "1:1052183286252:web:2e6a4f2567672050b070c9"
+};
+try {
+  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js");
+  const { getAuth, signInAnonymously, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js");
+  const { getFirestore, doc, setDoc, getDocs, collection } = await import("https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js");
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const save = async (iso, data) => {
+    const user = auth.currentUser;
+    if (!user) throw new Error('not signed in');
+    await setDoc(doc(db, 'jaanu_days', iso), {
+      date: iso, gutka: data.gutka, gum: data.gum, alcohol: data.alcohol,
+      walk: !!data.walk, food: !!data.food, period: !!data.period,
+      mood: data.mood || null, note: data.note || '',
+      updatedAt: data.updatedAt || Date.now(), uid: user.uid
+    }, { merge: true });
+  };
+  const loadAll = async () => {
+    const snap = await getDocs(collection(db, 'jaanu_days'));
+    const out = {};
+    snap.forEach(s => { out[s.id] = s.data(); });
+    return out;
+  };
+
+  window.__jaanuCloud = {
+    ready: false,
+    save,
+    loadAll,
+    mergeFromCloud: (cloud) => {
+      /* Merge cloud days into localStorage (newer updatedAt wins), then re-render. */
+      let local = {};
+      try { local = JSON.parse(localStorage.getItem('jaanu_days_v1') || '{}'); } catch(e){ local = {}; }
+      let changed = false;
+      Object.keys(cloud).forEach(iso => {
+        const c = cloud[iso], l = local[iso];
+        if (!l || (c.updatedAt || 0) > (l.updatedAt || 0)){
+          local[iso] = {
+            gutka: c.gutka ?? null, gum: c.gum ?? null, alcohol: c.alcohol ?? null,
+            walk: !!c.walk, food: !!c.food, period: !!c.period,
+            mood: c.mood || null, note: c.note || '', updatedAt: c.updatedAt || 0
+          };
+          changed = true;
+        }
+      });
+      if (changed){
+        localStorage.setItem('jaanu_days_v1', JSON.stringify(local));
+        if (window.__jaanuRerender) window.__jaanuRerender();
+      }
+      return changed;
+    }
+  };
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user){
+      window.__jaanuCloud.ready = true;
+      window.dispatchEvent(new Event('jaanu-cloud-ready'));
+      try {
+        const cloud = await loadAll();
+        window.__jaanuCloud.mergeFromCloud(cloud);
+      } catch(e){ /* rules not published yet / offline: stay local-first */ }
+    }
+  });
+  try { await signInAnonymously(auth); }
+  catch(e){ /* Anonymous auth not enabled yet — local-first mode, retry on next load */ }
+} catch(e){
+  /* Firebase CDN unreachable — app keeps working on localStorage only. */
+}
+</script>
+</body>
+</html>
