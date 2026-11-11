@@ -202,6 +202,29 @@
   .sheetbox .btns .main{background:var(--pink);color:#fff;border-color:var(--pink);}
 
   /* ===== v3 ===== */
+  /* ===== v5 eye-catching ===== */
+  body{background:linear-gradient(180deg,#fff0f6,#f3e8ff 55%,#e0f2fe) fixed;}
+  header{background:linear-gradient(135deg,#ec4899,#8b5cf6);border:0;border-radius:0 0 26px 26px;box-shadow:0 10px 26px rgba(139,92,246,.35);color:#fff;}
+  .app-row h1,.app-row h1 span{color:#fff;} .app-row p{color:#fde7f3;} .app-row h1{font-size:25px;letter-spacing:.3px;}
+  .stat{background:linear-gradient(180deg,#fff,#fdf2f8);border:0;box-shadow:0 4px 0 rgba(0,0,0,.12);} .stat b{font-size:19px;}
+  header,#motive,#tools,#deck,section.info{position:relative;z-index:1;} header{position:relative;}
+  #bgfx{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;} #bgfx span{position:absolute;bottom:-30px;opacity:.3;animation:floatup linear infinite;}
+  @keyframes floatup{to{transform:translateY(-115vh) rotate(40deg);}}
+  .card:not(.today){border:0;} .card{overflow:hidden;box-shadow:0 10px 24px rgba(139,92,246,.2);padding-top:20px;}
+  .card::before{content:'';position:absolute;left:0;right:0;top:0;height:8px;background:linear-gradient(90deg,#ec4899,#f59e0b,#8b5cf6);}
+  .card.today{box-shadow:0 0 0 3px #fbcfe8,0 12px 30px rgba(236,72,153,.4);}
+  .card-head .date{font-size:24px;background:linear-gradient(90deg,#be185d,#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .cflex{display:flex;gap:12px;align-items:center;}
+  .ring{width:60px;height:60px;border-radius:50%;background:conic-gradient(#ec4899 calc(var(--p)*1%),#fce7f3 0);display:grid;place-items:center;flex:none;transition:background .5s;}
+  .ring b{width:46px;height:46px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:14px;color:var(--pink-d);}
+  .tog.on{background:linear-gradient(180deg,#bbf7d0,#4ade80);box-shadow:0 3px 0 #16a34a;color:#064e3b;border-color:#4ade80;}
+  .stepper button{background:linear-gradient(180deg,#fff,#fdf2f8);box-shadow:0 3px 0 #f3d9e6;} .seg button.on-no{background:linear-gradient(180deg,#bbf7d0,#4ade80);}
+  .bottomnav button.main{box-shadow:0 4px 0 var(--pink-d);} .bottomnav{border-radius:22px 22px 0 0;box-shadow:0 -6px 20px rgba(139,92,246,.18);}
+  section.info{border:0;box-shadow:0 8px 20px rgba(139,92,246,.15);}
+  .dots{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0;} .dots i{width:14px;height:14px;border-radius:50%;background:#e5e7eb;}
+  .dots i.p{background:#f0627f;} .dots i.f{background:#9fd3d6;} .dots i.o{background:#3b9aa0;} .dots i.t{outline:2px solid #1f2937;outline-offset:1px;}
+  .cyl{font-size:13.5px;margin:3px 0;} .cyadd{display:flex;gap:8px;margin-top:8px;} .cyadd input{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px;} .cyadd button{border:0;background:var(--pink);color:#fff;font-weight:800;border-radius:10px;padding:0 14px;}
+
   #motive{background:linear-gradient(135deg,#fdf2f8,#ede9fe 60%,#e0f2fe);border:2px solid #f9a8d4;} #motive b{font-size:16px;}
   .says{display:block;margin-top:8px;padding-top:8px;border-top:1px dashed #f9a8d4;font-style:italic;color:#6b2145;font-size:13px;}
   #tools{display:flex;gap:7px;margin:10px 14px 0;overflow-x:auto;scrollbar-width:none;}
@@ -321,11 +344,12 @@
 </header>
 
 <div id="motive"></div>
-<div id="tools"><button id="tCrave">🆘 Craving</button><button id="tMusic">🎵 Music</button><button id="tCheer">💗 Cheer</button><button id="tMore">⚙️ More</button></div>
+<div id="tools"><button id="tCrave">🆘 Craving</button><button id="tWalk">🚶 Walk timer</button><button id="tMusic">🎵 Music</button><button id="tCheer">💗 Cheer</button><button id="tMore">⚙️ More</button></div>
 <div id="map" aria-label="Stage map"></div>
 <div id="celebrate"></div>
 <div id="deck" aria-label="Daily check-in cards"></div>
 
+<section class="info" id="cycle"></section>
 <section class="info" id="progress"></section>
 <section class="info">
   <h2>How Jaanu works 📒</h2>
@@ -433,7 +457,7 @@ function saveLocal(){
   } catch(e){ /* storage full/blocked: app keeps working in memory */ }
 }
 function blankDay(iso){
-  return { gutka: null, gum: null, alcohol: null, walk: false, food: false, period: false, mood: null, note: '', updatedAt: 0 };
+  return { gutka: null, gum: null, alcohol: null, walkMin: null, water: null, sleep: null, walk: false, food: false, period: false, mood: null, note: '', updatedAt: 0 };
 }
 function getDay(iso){ if (!days[iso]) days[iso] = blankDay(iso); return days[iso]; }
 
@@ -475,31 +499,35 @@ function daysLeft(){
 }
 
 /* ---------- fertile window (estimate, from logged period starts) ---------- */
+/* Flow history (from her Flow app): [period start, days of bleeding] */
+const HIST = [['2026-05-09',4],['2026-06-30',4],['2026-08-01',4],['2026-09-04',4],['2026-10-03',4],['2026-11-05',5]];
+function periodDaySet(){
+  const st = new Set();
+  HIST.forEach(([s0, n]) => { for (let i = 0; i < n; i++) st.add(isoOf(addDays(new Date(s0 + 'T00:00:00'), i))); });
+  Object.keys(days).forEach(i => { if (days[i].period) st.add(i); });
+  return st;
+}
 function periodStarts(){
-  const isos = Object.keys(days).filter(iso => days[iso].period).sort();
-  const starts = [];
-  isos.forEach(iso => {
-    const prev = isoOf(addDays(new Date(iso + 'T00:00:00'), -1));
-    if (!days[prev] || !days[prev].period) starts.push(iso);
+  const st = periodDaySet(), out = [];
+  [...st].sort().forEach(iso => {
+    if (st.has(isoOf(addDays(new Date(iso + 'T00:00:00'), -1)))) return;
+    const last = out[out.length - 1];
+    if (!last || (new Date(iso) - new Date(last)) / DAY_MS >= 15) out.push(iso);
   });
-  return starts;
+  return out;
 }
-function fertileWindows(){
-  /* From each logged period start: fertile ≈ start+9 .. start+16.
-     Plus one predicted cycle after the last logged start (+28d). */
-  const wins = [];
-  const starts = periodStarts();
-  starts.forEach(s => {
-    const base = new Date(s + 'T00:00:00');
-    for (let i = 9; i <= 16; i++) wins.push(isoOf(addDays(base, i)));
-  });
-  if (starts.length){
-    const last = new Date(starts[starts.length - 1] + 'T00:00:00');
-    const nextStart = addDays(last, cycLen(starts));
-    for (let i = 9; i <= 16; i++) wins.push(isoOf(addDays(nextStart, i)));
-  }
-  return new Set(wins);
+/* Ovulation ≈ 14 days before the NEXT period; fertile window = 5 days before to 1 day after. Cycle length = median of last 5 cycles. */
+function cycleInfo(){
+  const starts = periodStarts(), L = [];
+  for (let i = 1; i < starts.length; i++) L.push(Math.round((new Date(starts[i]) - new Date(starts[i - 1])) / DAY_MS));
+  const rec = L.slice(-5).sort((a, b) => a - b), med = rec.length ? rec[Math.floor(rec.length / 2)] : 28;
+  const last = starts[starts.length - 1], lastD = new Date(last + 'T00:00:00'), ov = [], fert = new Set();
+  const addW = nx => { const o = addDays(nx, -14); ov.push(isoOf(o)); for (let k = -5; k <= 1; k++) fert.add(isoOf(addDays(o, k))); };
+  for (let i = 1; i < starts.length; i++) addW(new Date(starts[i] + 'T00:00:00'));
+  const next = addDays(lastD, med); addW(next); addW(addDays(next, med));
+  return { starts, L, med, last, next: isoOf(next), ovNext: isoOf(addDays(next, -14)), ov, fert };
 }
+function fertileWindows(){ return cycleInfo().fert; }
 
 /* ---------- rendering ---------- */
 const deck = document.getElementById('deck');
@@ -521,6 +549,9 @@ function cardHTML(d, iso, dayNo){
   const dis = isFuture ? 'disabled' : '';
   const gutkaVal = day.gutka === null ? '<span class="na">–</span>' : day.gutka;
   const gumVal = day.gum === null ? '<span class="na">–</span>' : day.gum;
+  const wm = day.walkMin != null ? day.walkMin : (day.walk ? 30 : null);
+  const na = '<span class="na">–</span>';
+  const stp = (k, v, u) => '<div class="stepper"><button data-act="' + k + '-" data-iso="' + iso + '" ' + dis + '>−</button><span class="val">' + (v == null ? na : v) + '<small style="font-size:10px;font-weight:700"> ' + u + '</small></span><button data-act="' + k + '+" data-iso="' + iso + '" ' + dis + '>+</button></div>';
 
   return '' +
   '<article class="card' + (isToday ? ' today' : '') + (isFuture ? ' future' : '') + (ph.key === 'trip' ? ' trip' : '') + '" id="card-' + iso + '" data-iso="' + iso + '">' +
@@ -538,8 +569,8 @@ function cardHTML(d, iso, dayNo){
           : '<div class="fert wait">🌸 Fertile window (estimate) — still in the taper. Trying starts in Month 3.</div>')
       : '') +
     '<div class="complete">' +
-      '<div class="row"><span>Today\'s completion</span><span>' + pct + '% · ' + done + '/4 key boxes</span></div>' +
-      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="cflex"><div class="ring" style="--p:' + pct + '"><b>' + done + '/4</b></div><div style="flex:1"><div class="row"><span>Today\'s completion</span><span>' + pct + '% · ' + done + '/4 key boxes</span></div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div></div></div>' +
       '<div class="perfect' + (perfect ? ' win' : '') + '">' + (perfect ? '⭐ Perfect day — star earned!' : cardMotive(done, isFuture, dayNo)) + '</div>' +
     '</div>' +
 
@@ -557,11 +588,13 @@ function cardHTML(d, iso, dayNo){
       '<div class="seg"><button data-act="alc-no" data-iso="' + iso + '" class="' + (day.alcohol === false ? 'on-no' : '') + '" ' + dis + '>No 🙅</button>' +
       '<button data-act="alc-yes" data-iso="' + iso + '" class="' + (day.alcohol === true ? 'on-yes' : '') + '" ' + dis + '>Yes</button></div></div>' +
 
-    '<div class="rowline"><div class="lbl"><b>🚶 30-min walk</b><small>Together if you can — even a slow one counts</small></div>' +
-      '<button class="tog' + (day.walk ? ' on' : '') + '" data-act="walk" data-iso="' + iso + '" ' + dis + '>' + (day.walk ? '✓ Done' : 'Tap when done') + '</button></div>' +
+    '<div class="rowline"><div class="lbl"><b>🚶 Walk time</b><small>' + (wm >= 30 ? '✅ 30-min goal reached!' : 'Goal 30 min · +5 per tap, or use the timer') + '</small></div>' + stp('walk', wm, 'min') + '</div>' +
 
     '<div class="rowline"><div class="lbl"><b>🥗 Less-oil food</b><small>Normal home food, just less oily / fried</small></div>' +
       '<button class="tog' + (day.food ? ' on' : '') + '" data-act="food" data-iso="' + iso + '" ' + dis + '>' + (day.food ? '✓ Done' : 'Tap when done') + '</button></div>' +
+
+    '<div class="rowline"><div class="lbl"><b>💧 Water</b><small>Goal 8 glasses · bonus</small></div>' + stp('water', day.water, 'gl') + '</div>' +
+    '<div class="rowline"><div class="lbl"><b>😴 Sleep</b><small>Goal 7+ hours · bonus</small></div>' + stp('sleep', day.sleep, 'h') + '</div>' +
 
     '<div class="rowline"><div class="lbl"><b>🩸 Period day</b><small>Log it honestly — it finds the fertile window</small></div>' +
       '<button class="tog period' + (day.period ? ' on' : '') + '" data-act="period" data-iso="' + iso + '" ' + dis + '>' + (day.period ? '✓ Period day' : 'Not today') + '</button></div>' +
@@ -591,7 +624,7 @@ function renderAll(){
   renderHeader();
   buildMap();
   const f = cardEl(focusIso || todayISO()); if (f) f.classList.add('focus');
-  setMotive(); renderProgress();
+  setMotive(); renderProgress(); renderCycle();
 }
 function renderHeader(){
   const s = computeStats();
@@ -658,7 +691,9 @@ deck.addEventListener('click', (e) => {
   else if (act === 'gum+'){ d.gum = (d.gum === null ? 1 : Math.min(24, d.gum + 1)); patchDay(iso, { gum: d.gum }); }
   else if (act === 'alc-no'){ patchDay(iso, { alcohol: false }); }
   else if (act === 'alc-yes'){ patchDay(iso, { alcohol: true }); }
-  else if (act === 'walk'){ patchDay(iso, { walk: !d.walk }); }
+  else if (act === 'walk-' || act === 'walk+'){ const v = Math.max(0, Math.min(240, (d.walkMin != null ? d.walkMin : (d.walk ? 30 : 0)) + (act === 'walk+' ? 5 : -5))); patchDay(iso, { walkMin: v, walk: v >= 30 }); }
+  else if (act === 'water-' || act === 'water+'){ patchDay(iso, { water: Math.max(0, Math.min(20, (d.water || 0) + (act === 'water+' ? 1 : -1))) }); }
+  else if (act === 'sleep-' || act === 'sleep+'){ patchDay(iso, { sleep: Math.max(0, Math.min(14, (d.sleep || 0) + (act === 'sleep+' ? .5 : -.5))) }); }
   else if (act === 'food'){ patchDay(iso, { food: !d.food }); }
   else if (act === 'period'){ patchDay(iso, { period: !d.period }); }
   else if (act === 'mood'){ patchDay(iso, { mood: d.mood === btn.dataset.mood ? null : btn.dataset.mood }); }
@@ -1070,7 +1105,7 @@ function renderProgress(){
     const x = 12 + k * 22, g = getDay(iso).gutka, tg = taperTarget(d);
     if (g !== null) bars += '<rect x="' + x + '" y="' + (90 - g * 11) + '" width="14" height="' + (g * 11) + '" rx="3" fill="' + (g <= tg ? '#16a34a' : '#ef4444') + '"/>';
     line += (line ? 'L' : 'M') + (x + 7) + ' ' + (90 - tg * 11) + ' ';
-    if (getDay(iso).walk) bars += '<text x="' + (x + 7) + '" y="104" font-size="9" text-anchor="middle">🚶</text>';
+    if (getDay(iso).walk) bars += '<text x="' + (x + 7) + '" y="104" font-size="9" text-anchor="middle">' + (getDay(iso).walkMin || '🚶') + '</text>';
   }
   const chart = '<svg viewBox="0 0 322 108" width="100%"><line x1="0" y1="90" x2="322" y2="90" stroke="#f3d9e6"/>' + bars + '<path d="' + line + '" fill="none" stroke="#ec4899" stroke-width="2" stroke-dasharray="4 3"/></svg>';
   /* badges */
@@ -1103,6 +1138,42 @@ let voiceOn = true; try { voiceOn = localStorage.getItem('jaanu_voice') !== '0';
 function speak(t){ try { if (!voiceOn || !window.speechSynthesis || !t) return; const u = new SpeechSynthesisUtterance(t); u.lang = 'en-IN'; u.rate = .95; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch(e){} }
 const WIN_SPEAK = ['Level complete! You crushed it, Jaanu!','Perfect day! I am so proud of you.','Another star! Keep going, you are amazing.','Well done! One more level cleared.'];
 function starPings(){ try { [0, .25, .5].forEach((d, i) => tone(NOTE[4 + i * 2] * 2, .5, .13, .2 + d)); } catch(e){} }
+
+/* ===================== v5: cycle tracker, walk timer, floating hearts ===================== */
+const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fs = iso => { const d = new Date(iso + 'T00:00:00'); return d.getDate() + ' ' + mon[d.getMonth()]; };
+function renderCycle(){
+  const el = document.getElementById('cycle'), ci = cycleInfo(), t = todayISO(), ps = periodDaySet(), lastD = new Date(ci.last + 'T00:00:00');
+  const day = Math.round((new Date(t + 'T00:00:00') - lastD) / DAY_MS) + 1;
+  let dots = ''; const n = Math.max(ci.med, day);
+  for (let k = 0; k < n; k++){ const iso = isoOf(addDays(lastD, k)); dots += '<i class="' + (ps.has(iso) ? 'p' : iso === ci.ovNext ? 'o' : ci.fert.has(iso) ? 'f' : '') + (iso === t ? ' t' : '') + '"></i>'; }
+  const fw = [...ci.fert].filter(i => i >= ci.last).sort().slice(0, 7);
+  el.innerHTML = '<h2>🌸 Cycle tracker</h2><div class="cyl"><b>Cycle day ' + day + '</b> · started ' + fs(ci.last) + ' · typical cycle ≈ ' + ci.med + ' days</div><div class="dots">' + dots + '</div>' +
+    '<div class="small">🔴 period · 🔹 fertile window · 🟢 ovulation (estimate) · outlined = today</div>' +
+    '<div class="cyl">🌸 Next fertile window: <b>' + fs(fw[0]) + ' – ' + fs(fw[fw.length - 1]) + '</b> (ovulation ≈ ' + fs(ci.ovNext) + ')</div>' +
+    '<div class="cyl">🩸 Next period expected ≈ <b>' + fs(ci.next) + '</b></div>' +
+    '<div class="cyl small">Past cycles: ' + ci.L.join(', ') + ' days (range ' + Math.min(...ci.L) + '–' + Math.max(...ci.L) + '). Cycles this irregular make dates uncertain — treat them as estimates. Ovulation strips (LH kits) and your doctor give a firmer answer.</div>' +
+    '<div class="cyadd"><input type="date" id="cyDate"><button id="cyAdd">+ Add old period start</button></div>';
+}
+document.getElementById('cycle').addEventListener('click', e => {
+  if (e.target.id !== 'cyAdd') return; const v = document.getElementById('cyDate').value; if (!v) return;
+  for (let i = 0; i < 4; i++){ const iso = isoOf(addDays(new Date(v + 'T00:00:00'), i)), d = getDay(iso); d.period = true; d.updatedAt = Date.now(); queueCloudSave(iso); }
+  renderAll(); toast('Period start added ✓');
+});
+/* walk timer */
+let wk0 = 0; try { wk0 = parseInt(localStorage.getItem('jaanu_walk0') || '0', 10) || 0; } catch(e){}
+function wkUpdate(){ const b = document.getElementById('tWalk'); if (!wk0){ b.textContent = '🚶 Walk timer'; b.classList.remove('on'); return; } b.textContent = '⏹ ' + Math.floor((Date.now() - wk0) / 60000) + ' min'; b.classList.add('on'); }
+document.getElementById('tWalk').addEventListener('click', () => {
+  if (!wk0){ wk0 = Date.now(); try { localStorage.setItem('jaanu_walk0', wk0); } catch(e){} toast('Walk started — enjoy! 🚶'); }
+  else {
+    const m = Math.max(1, Math.round((Date.now() - wk0) / 60000)); wk0 = 0; try { localStorage.removeItem('jaanu_walk0'); } catch(e){}
+    const t = todayISO(), d = getDay(t), cur = d.walkMin != null ? d.walkMin : (d.walk ? 30 : 0);
+    patchDay(t, { walkMin: cur + m, walk: cur + m >= 30 }); notify('Walk logged 🚶', '+' + m + ' min — total ' + (cur + m) + ' min today.');
+  }
+  wkUpdate();
+});
+setInterval(wkUpdate, 15000); wkUpdate();
+(function(){ const w = document.createElement('div'); w.id = 'bgfx'; for (let i = 0; i < 9; i++){ const x = document.createElement('span'); x.textContent = ['💗','✨','⭐','🌸'][i % 4]; x.style.cssText = 'left:' + (i * 11 + 3) + '%;animation-delay:' + (i * 1.7) + 's;animation-duration:' + (12 + i % 4 * 3) + 's;font-size:' + (14 + i % 3 * 6) + 'px'; w.appendChild(x); } document.body.prepend(w); })();
 
 /* ---------- boot ---------- */
 window.__jaanuRerender = () => { renderAll(); scrollToISO(focusIso || todayISO(), false); };
@@ -1148,7 +1219,7 @@ try {
     if (!user) throw new Error('not signed in');
     await setDoc(doc(db, 'jaanu_days', iso), {
       date: iso, gutka: data.gutka, gum: data.gum, alcohol: data.alcohol,
-      walk: !!data.walk, food: !!data.food, period: !!data.period,
+      walk: !!data.walk, walkMin: data.walkMin ?? null, water: data.water ?? null, sleep: data.sleep ?? null, food: !!data.food, period: !!data.period,
       mood: data.mood || null, note: data.note || '',
       updatedAt: data.updatedAt || Date.now(), uid: user.uid
     }, { merge: true });
@@ -1175,7 +1246,7 @@ try {
         if (!l || (c.updatedAt || 0) > (l.updatedAt || 0)){
           local[iso] = {
             gutka: c.gutka ?? null, gum: c.gum ?? null, alcohol: c.alcohol ?? null,
-            walk: !!c.walk, food: !!c.food, period: !!c.period,
+            walk: !!c.walk, walkMin: c.walkMin ?? null, water: c.water ?? null, sleep: c.sleep ?? null, food: !!c.food, period: !!c.period,
             mood: c.mood || null, note: c.note || '', updatedAt: c.updatedAt || 0
           };
           changed = true;
