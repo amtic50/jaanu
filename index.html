@@ -499,10 +499,16 @@ function daysLeft(){
 }
 
 /* ---------- fertile window (estimate, from logged period starts) ---------- */
-/* Period history lives in Firebase (jaanu_meta/shared -> hist), NOT in this file. */
+/* Period history lives in Firebase (jaanu_meta/shared -> hist), NOT in this file.
+   HIST is a local copy, seeded from the cached meta in localStorage at boot
+   (meta itself is declared later in this script, so periodDaySet must NOT
+   read `meta` directly — that broke v5.1: the script died on first load).
+   Refreshed from Firebase whenever the meta doc arrives (see __jaanuMeta). */
+let HIST = [];
+try { HIST = (JSON.parse(localStorage.getItem('jaanu_meta_v1') || '{}').hist) || []; } catch(e){}
 function periodDaySet(){
   const st = new Set();
-  (meta.hist || []).forEach(h => { for (let i = 0; i < (h.days || 0); i++) st.add(isoOf(addDays(new Date(h.start + 'T00:00:00'), i))); });
+  HIST.forEach(h => { for (let i = 0; i < (h.days || 0); i++) st.add(isoOf(addDays(new Date(h.start + 'T00:00:00'), i))); });
   Object.keys(days).forEach(i => { if (days[i].period) st.add(i); });
   return st;
 }
@@ -970,7 +976,7 @@ window.__jaanuMeta = m => {
   meta = Object.assign(meta, m); try { localStorage.setItem(LS_META, JSON.stringify(meta)); } catch(e){}
   if (m.rewards) rewards = m.rewards;
   if (m.freeze){ settings.freeze = m.freeze; renderHeader(); }
-  if (m.hist){ fertileSet = fertileWindows(); renderAll(); }
+  if (m.hist){ HIST = m.hist; fertileSet = fertileWindows(); renderAll(); }
   const e = m.event;
   if (e && e.from !== me && e.ts > lastEvt){ lastEvt = e.ts; try { localStorage.setItem('jaanu_evt', e.ts); } catch(_){} notify(e.type === 'cheer' ? '💗 Cheer for you!' : '⭐ Partner update', e.text); chime(); speak(e.text.replace(/[^\w\s.,'!-]/g, '')); }
   setMotive();
