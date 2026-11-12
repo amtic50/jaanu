@@ -427,7 +427,7 @@
   <p>Log period days honestly. Jaanu estimates the fertile window from your logged period start (about cycle days 10–17) and marks those cards 🌸 — but only in Month 3, and only if gutka and alcohol are at zero and the checks (TSH result) are in. Otherwise Month 3 becomes a correction month and trying shifts one cycle. <b>Do not restart the thyroid tablet on your own.</b></p>
   <h3>💾 Saving &amp; sync</h3>
   <p class="small">Everything saves on this phone first — it works fully offline. When the phone is online it also syncs to the family Firebase (project jaanu-ac156, collection <code>jaanu_days</code>). If sync is not set up yet you will see "saved on this phone — will sync later" and nothing is lost.</p>
-  <p class="small">App version: <b>v5.6</b> · If this number looks older on your phone, the phone has not picked up the latest update yet — close the app fully and reopen it.</p>
+  <p class="small">App version: <b>v5.7</b> · If this number looks older on your phone, the phone has not picked up the latest update yet — close the app fully and reopen it.</p>
 </section>
 
 <nav class="bottomnav">
@@ -506,6 +506,15 @@ function saveLocal(){
     localStorage.setItem(LS_PEND, JSON.stringify(pendingSync));
   } catch(e){ /* storage full/blocked: app keeps working in memory */ }
 }
+/* v5.7: let the Firebase module fold cloud days into the in-memory copy.
+   mergeFromCloud used to write localStorage only and then re-render — but
+   renderAll reads the in-memory `days`, so the screen blinked and kept
+   the old values until a reload. Only days the cloud actually overwrote
+   are passed in; a day edited locally (newer updatedAt) is never in the
+   set, so local edits are never clobbered. */
+window.__jaanuApplyCloudDays = (subset) => {
+  Object.keys(subset).forEach(iso => { days[iso] = subset[iso]; });
+};
 function blankDay(iso){
   /* v5.5: a fresh day card starts with 7h sleep (the usual night) and no
      coffee logged. Days already saved are never touched — getDay only
@@ -1548,6 +1557,7 @@ try {
       let local = {};
       try { local = JSON.parse(localStorage.getItem('jaanu_days_v1') || '{}'); } catch(e){ local = {}; }
       let changed = false;
+      const changedDays = {};   /* v5.7: days the cloud actually overwrote */
       Object.keys(cloud).forEach(iso => {
         const c = cloud[iso], l = local[iso];
         if (!l || (c.updatedAt || 0) > (l.updatedAt || 0)){
@@ -1556,11 +1566,16 @@ try {
             walk: !!c.walk, walkMin: c.walkMin ?? null, water: c.water ?? null, sleep: c.sleep ?? null, food: !!c.food, coffee: c.coffee ?? null, period: !!c.period,
             mood: c.mood || null, note: c.note || '', updatedAt: c.updatedAt || 0
           };
+          changedDays[iso] = local[iso];
           changed = true;
         }
       });
       if (changed){
         localStorage.setItem('jaanu_days_v1', JSON.stringify(local));
+        /* v5.7: fold the changed days into the screen's in-memory copy
+           BEFORE re-rendering — renderAll reads `days`, not localStorage,
+           so without this the screen blinked and kept the old values. */
+        if (window.__jaanuApplyCloudDays) window.__jaanuApplyCloudDays(changedDays);
         if (window.__jaanuRerender) window.__jaanuRerender();
       }
       return changed;
