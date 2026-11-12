@@ -427,6 +427,7 @@
   <p>Log period days honestly. Jaanu estimates the fertile window from your logged period start (about cycle days 10–17) and marks those cards 🌸 — but only in Month 3, and only if gutka and alcohol are at zero and the checks (TSH result) are in. Otherwise Month 3 becomes a correction month and trying shifts one cycle. <b>Do not restart the thyroid tablet on your own.</b></p>
   <h3>💾 Saving &amp; sync</h3>
   <p class="small">Everything saves on this phone first — it works fully offline. When the phone is online it also syncs to the family Firebase (project jaanu-ac156, collection <code>jaanu_days</code>). If sync is not set up yet you will see "saved on this phone — will sync later" and nothing is lost.</p>
+  <p class="small">App version: <b>v5.6</b> · If this number looks older on your phone, the phone has not picked up the latest update yet — close the app fully and reopen it.</p>
 </section>
 
 <nav class="bottomnav">
@@ -1566,6 +1567,15 @@ try {
     }
   };
 
+  /* v5.6: re-read the day documents whenever the app comes back into view
+     or back online — the live listener can go stale while the tab is frozen
+     or the phone sleeps, so a missed day change would otherwise only appear
+     after a reload. Mirrors the meta re-check added in v5.5. */
+  const refreshDays = async () => {
+    try { const cloud = await loadAll(); window.__jaanuCloud.mergeFromCloud(cloud); }
+    catch(e){ if (window.__jaanuSyncFault) window.__jaanuSyncFault(); }
+  };
+
   onAuthStateChanged(auth, async (user) => {
     if (user){
       window.__jaanuCloud.ready = true;
@@ -1579,14 +1589,15 @@ try {
   });
   try { await signInAnonymously(auth); }
   catch(e){ /* Anonymous auth not enabled yet — local-first mode, retry on next load */ }
-  /* v5.5: re-check for missed partner events whenever the app comes back
-     into view or back online (the live listener can miss one while the
-     tab is frozen or the listener errors). */
+  /* v5.6: re-check for missed partner events AND missed day changes
+     whenever the app comes back into view or back online (the live
+     listener can miss them while the tab is frozen or the listener
+     goes stale). */
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && window.__jaanuCloud && window.__jaanuCloud.ready) window.__jaanuCloud.getMeta();
+    if (!document.hidden && window.__jaanuCloud && window.__jaanuCloud.ready){ window.__jaanuCloud.getMeta(); refreshDays(); }
   });
   window.addEventListener('online', () => {
-    if (window.__jaanuCloud && window.__jaanuCloud.ready) window.__jaanuCloud.getMeta();
+    if (window.__jaanuCloud && window.__jaanuCloud.ready){ window.__jaanuCloud.getMeta(); refreshDays(); }
   });
 } catch(e){
   /* Firebase CDN unreachable — app keeps working on localStorage only. */

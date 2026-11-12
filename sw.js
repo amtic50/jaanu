@@ -1,6 +1,6 @@
 /* Jaanu service worker — cache the app shell so it opens offline.
    Firestore traffic is never cached (only same-origin GETs are handled). */
-const CACHE = 'jaanu-v4';
+const CACHE = 'jaanu-v5';
 const SHELL = [
   './',
   './index.html',

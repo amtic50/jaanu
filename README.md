@@ -13,7 +13,7 @@ layer. Works fully offline; syncs to Firebase when online.
 | `manifest.json` | Makes it installable to the home screen (PWA). App name **Jaanu**. |
 | `sw.js` | Service worker — caches the app shell so it opens offline. |
 | `icon-192.png` / `icon-512.png` | App icon (pink heart + leaf). `icon.svg` is the vector source. |
-| `firestore-rules-snippet.txt` | **Complete, ready-to-paste** Firestore rules for the `jaanu_days` collection + the exact console steps. |
+| `firestore-rules-snippet.txt` | **Complete, ready-to-paste** Firestore rules for the `jaanu_days` collection and the shared `jaanu_meta` doc + the exact console steps. |
 | `README.md` | This file. |
 
 ## The plan baked into the app
@@ -47,15 +47,15 @@ On the phone: open that link in Chrome → menu → **"Add to Home screen"**
 
 ## Firebase setup (do this once — parent does it in the console)
 
-The app uses the **goalpara-leave** project (same as the leave portal).
+The app uses the **jaanu-ac156** project (its own Firebase project — not the leave portal's).
 The Firebase web config is already in `index.html`.
 
 1. **Anonymous auth** — the app signs in anonymously (no login for Prity):
-   `console.firebase.google.com` → project **goalpara-leave** →
+   `console.firebase.google.com` → project **jaanu-ac156** →
    Build → **Authentication** → **Sign-in method** → **Anonymous** → Enable → Save.
 2. **Authorized domain** — Build → **Authentication** → **Settings** →
    **Authorized domains** → make sure `amtic50.github.io` is listed
-   (it should already be there from the leave portal). Without it,
+   (add it if it is missing). Without it,
    anonymous sign-in fails with `auth/unauthorized-domain`.
 3. **Firestore rules** — Build → **Firestore Database** → **Rules** tab →
    paste the block from `firestore-rules-snippet.txt` **inside**
@@ -75,5 +75,7 @@ rules/auth are live.
   `alcohol` (true/false/null), `walk`, `food`, `period` (booleans),
   `mood` (happy/ok/meh/low/sad/null), `note` (≤120 chars), `updatedAt`,
   `uid` (anonymous user id).
+- Shared doc: **`jaanu_meta/shared`** — cheers/events, rewards, streak
+  freeze, period history (`hist`), reports, `why`, `pinHash`.
 - Local first: `localStorage` keys `jaanu_days_v1`, `jaanu_settings_v1`,
   `jaanu_pending_v1`. Cloud merge is last-write-wins by `updatedAt`.
