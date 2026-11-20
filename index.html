@@ -286,6 +286,695 @@
   .sheetbox .btns button.sel{background:var(--pink);color:#fff;} .pbtn{width:100%;margin-top:8px;border:1px solid var(--line);background:#fff;border-radius:12px;padding:11px;font-weight:800;cursor:pointer;}
 
 </style>
+
+<style id="merge-tabs">
+/* ================= MERGE (Jaanu + Manua, v6): bottom tab system =================
+   Everything in this block is NEW. Jaanu's own <style> above is untouched. */
+#tab-manua{display:none}
+#tab-summary{display:none}
+#tabbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;gap:8px;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  background:#fff;border-top:1px solid var(--line);
+  border-radius:22px 22px 0 0;box-shadow:0 -6px 20px rgba(139,92,246,.18);}
+#tabbar button{flex:1;border:1px solid var(--line);background:#fff;border-radius:12px;
+  padding:11px 6px;font-size:15px;font-weight:800;cursor:pointer;color:var(--ink);
+  font-family:inherit;}
+#tabbar button.active{background:var(--pink);border-color:var(--pink);color:#fff;
+  box-shadow:0 4px 0 var(--pink-d);}
+body.dark #tabbar{background:var(--card);}
+body.dark #tabbar button{background:var(--card);color:var(--ink);border-color:var(--line);}
+/* Jaanu's own Prev/Today/Next bar sits just above the tab bar now. */
+.bottomnav{bottom:calc(64px + env(safe-area-inset-bottom));}
+/* Toast + Undo floated above the old bottomnav — lift them above the new stack. */
+#toast{bottom:148px;}
+#undo{bottom:156px;}
+/* Body needs room for both fixed bars (bottomnav + tab bar). */
+body{padding-bottom:152px;}
+/* ---------- Summary tab (joint view, Jaanu pink theme) ---------- */
+.sum-wrap{max-width:720px;margin:0 auto;padding:16px 14px;}
+.sum-title{font-size:20px;margin:4px 0;color:var(--pink-d);}
+.sum-sub{color:var(--muted);font-size:13px;margin:0 0 12px;}
+.sum-card{background:#fff;border:1px solid var(--line);border-radius:18px;
+  padding:14px;box-shadow:var(--shadow);margin-bottom:12px;}
+.sum-card h3{margin:0 0 8px;font-size:16px;}
+.sum-card p{margin:6px 0;font-size:14.5px;}
+.sum-note{color:var(--muted);font-size:12.5px;text-align:center;}
+body.dark .sum-card{background:var(--card);color:var(--ink);border-color:var(--line);}
+body.dark .sum-title{color:var(--pink);}
+/* ---------- PT Timer styles, scoped to the Manua tab only ---------- */
+
+    /* High-Contrast Dark Mode Design Tokens */
+    #tab-manua{
+      --bg-color: #0b0f19;
+      --card-bg: #151c2c;
+      --surface-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-hold: #10b981;     /* High-contrast Emerald Green for Hold */
+      --accent-rest: #f59e0b;     /* High-contrast Amber for Rest/Transition */
+      --accent-primary: #3b82f6;  /* Vibrant Blue for active controls */
+      --accent-danger: #ef4444;   /* Red for Reset */
+      --border-color: #334155;
+    }
+
+    #tab-manua *{
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    #tab-manua{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+      user-select: none;
+    }
+
+    #tab-manua .app-container{
+      width: 100%;
+      max-width: 720px;
+      background-color: var(--card-bg);
+      border-radius: 1.5rem;
+      padding: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Header & Progress Bar */
+    #tab-manua header{
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    
+      background:transparent;border-bottom:none;padding:0;position:static;}
+
+    #tab-manua .header-top{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    #tab-manua .header-actions{
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    #tab-manua .chip-btn{
+      background-color: var(--surface-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: background-color 0.2s, border-color 0.2s;
+    }
+
+    #tab-manua .chip-btn.active{
+      background-color: rgba(59, 130, 246, 0.2);
+      border-color: var(--accent-primary);
+      color: #93c5fd;
+    }
+
+    #tab-manua .progress-track{
+      width: 100%;
+      height: 14px;
+      background-color: var(--bg-color);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+
+    #tab-manua .progress-fill{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-primary), var(--accent-hold));
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Central High-Contrast Display */
+    #tab-manua .display-area{
+      text-align: center;
+      padding: 1.5rem 1rem;
+      background-color: var(--bg-color);
+      border-radius: 1.25rem;
+      border: 3px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    #tab-manua .display-area.state-hold{
+      border-color: var(--accent-hold);
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+    }
+
+    #tab-manua .display-area.state-rest{
+      border-color: var(--accent-rest);
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+    }
+
+    #tab-manua .display-area.state-done{
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.25);
+    }
+
+    #tab-manua .exercise-title{
+      font-size: clamp(1.45rem, 4.5vw, 2.2rem);
+      font-weight: 800;
+      line-height: 1.2;
+      min-height: 2.4em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Quick Inline Adjusters on Main Display */
+    #tab-manua .quick-adjust-bar{
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    #tab-manua .badge{
+      background-color: var(--surface-bg);
+      padding: 0.5rem 0.9rem;
+      border-radius: 0.85rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    #tab-manua .badge span{
+      color: var(--text-main);
+      font-size: 1.25rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #tab-manua .mini-step-btn{
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      width: 28px;
+      height: 28px;
+      border-radius: 0.4rem;
+      font-weight: 900;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #tab-manua .mini-step-btn:active{
+      transform: scale(0.92);
+    }
+
+    /* Giant Distance-Readable Timer */
+    #tab-manua .timer-wrapper{
+      margin: 0.15rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #tab-manua .phase-label{
+      font-size: clamp(1.15rem, 3.5vw, 1.5rem);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      padding: 0.25rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 0.25rem;
+    }
+
+    #tab-manua .phase-hold{
+      color: var(--accent-hold);
+      background-color: rgba(16, 185, 129, 0.12);
+    }
+
+    #tab-manua .phase-rest{
+      color: var(--accent-rest);
+      background-color: rgba(245, 158, 11, 0.12);
+    }
+
+    #tab-manua .phase-idle{
+      color: var(--text-muted);
+      background-color: rgba(148, 163, 184, 0.1);
+    }
+
+    #tab-manua .countdown{
+      font-size: clamp(4.75rem, 17vw, 7.25rem);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+
+    /* Large Mobile-Friendly Controls */
+    #tab-manua .controls{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.85rem;
+    }
+
+    #tab-manua .btn{
+      appearance: none;
+      border: none;
+      border-radius: 1rem;
+      padding: 1.1rem 1rem;
+      font-size: 1.1rem;
+      font-weight: 800;
+      cursor: pointer;
+      color: var(--text-main);
+      background-color: var(--surface-bg);
+      border: 1px solid var(--border-color);
+      transition: transform 0.1s ease, filter 0.15s ease, background-color 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      touch-action: manipulation;
+    }
+
+    #tab-manua .btn:active{
+      transform: scale(0.98);
+    }
+
+    #tab-manua .btn:hover{
+      filter: brightness(1.12);
+    }
+
+    #tab-manua .btn:focus-visible{
+      outline: 3px solid var(--text-main);
+      outline-offset: 2px;
+    }
+
+    #tab-manua .btn-primary{
+      grid-column: span 2;
+      background-color: var(--accent-primary);
+      border-color: transparent;
+      font-size: 1.35rem;
+      padding: 1.25rem;
+      letter-spacing: 0.04em;
+    }
+
+    #tab-manua .btn-primary.running{
+      background-color: var(--accent-rest);
+      color: #0b0f19;
+    }
+
+    #tab-manua .btn-danger{
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+
+    /* Collapsible Customizer Panel */
+    #tab-manua .settings-panel{
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 1.1rem;
+      padding: 1.1rem;
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    #tab-manua .settings-panel.open{
+      display: flex;
+    }
+
+    #tab-manua .settings-header{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.65rem;
+    }
+
+    #tab-manua .settings-title{
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text-main);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    #tab-manua .global-settings-grid{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 0.75rem;
+    }
+
+    #tab-manua .setting-box{
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #tab-manua .setting-box label{
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    #tab-manua .stepper{
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    #tab-manua .stepper-val{
+      font-weight: 800;
+      font-size: 1.05rem;
+      min-width: 2.2rem;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #tab-manua .exercise-editor-list{
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    #tab-manua .exercise-edit-row{
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    #tab-manua .exercise-edit-name{
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    #tab-manua .exercise-edit-controls{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    #tab-manua .mini-field{
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.5rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    #tab-manua .mini-field span{
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    /* Interactive Exercise Routine List */
+    #tab-manua .routine-section{
+      border-top: 1px solid var(--border-color);
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    #tab-manua .routine-heading{
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    #tab-manua .routine-list{
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    #tab-manua .routine-item{
+      width: 100%;
+      text-align: left;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-radius: 0.75rem;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+      gap: 0.5rem;
+    }
+
+    #tab-manua .routine-item:hover{
+      background-color: var(--surface-bg);
+      color: var(--text-main);
+    }
+
+    #tab-manua .routine-item.active{
+      background-color: rgba(59, 130, 246, 0.15);
+      color: var(--text-main);
+      font-weight: 700;
+      border-color: var(--accent-primary);
+      border-left: 5px solid var(--accent-primary);
+    }
+
+    #tab-manua .routine-item.done{
+      opacity: 0.55;
+    }
+
+    #tab-manua .routine-item.done .routine-name{
+      text-decoration: line-through;
+    }
+
+    #tab-manua .routine-meta{
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+      background-color: var(--card-bg);
+      padding: 0.25rem 0.6rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    @media (max-width: 520px){
+      #tab-manua .app-container{
+        padding: 1.1rem;
+      }
+      #tab-manua .exercise-edit-controls{
+        grid-template-columns: 1fr;
+      }
+      #tab-manua .mini-field{
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 0.4rem 0.75rem;
+      }
+    }
+    /* --- v2 additions: safety note, reminder banner, cues, estimate, history --- */
+    #tab-manua .safety-note{
+      background-color: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fcd34d;
+      border-radius: 0.85rem;
+      padding: 0.7rem 0.9rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    #tab-manua .reminder-banner{
+      background-color: rgba(59, 130, 246, 0.16);
+      border: 1px solid var(--accent-primary);
+      border-radius: 0.85rem;
+      padding: 0.75rem 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+      font-weight: 700;
+    }
+
+    #tab-manua .reminder-banner[hidden]{
+      display: none;
+    }
+
+    #tab-manua .exercise-cue{
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      line-height: 1.4;
+      min-height: 1.3em;
+    }
+
+    #tab-manua .time-estimate{
+      text-align: center;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    #tab-manua .settings-note{
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    #tab-manua .app-container input[type="text"], #tab-manua .app-container input[type="number"], #tab-manua .app-container input[type="time"]{
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 0.45rem 0.6rem;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: inherit;
+    }
+
+    #tab-manua .app-container input[type="time"]{
+      color-scheme: dark;
+    }
+
+    #tab-manua .app-container input[type="number"]{
+      width: 4.2rem;
+      text-align: center;
+    }
+
+    #tab-manua .ex-name-input{
+      flex: 1;
+      min-width: 0;
+    }
+
+    #tab-manua .ex-cue-input{
+      width: 100%;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    #tab-manua .exercise-edit-head{
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    #tab-manua .add-exercise-form{
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      background-color: var(--card-bg);
+      border: 1px dashed var(--border-color);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+    }
+
+    #tab-manua .add-exercise-fields{
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    #tab-manua .add-exercise-fields label{
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    #tab-manua .backup-row{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    #tab-manua .history-section{
+      border-top: 1px solid var(--border-color);
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    #tab-manua .history-streak{
+      font-weight: 800;
+      font-size: 1rem;
+    }
+
+    #tab-manua .history-list{
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    #tab-manua .history-item{
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      background-color: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 0.6rem;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    #tab-manua .history-item.done{
+      color: var(--text-main);
+    }
+
+    #tab-manua .history-details summary{
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+  
+</style>
 </head>
 <body>
 
@@ -356,6 +1045,7 @@
 })();
 </script>
 
+<div id="tab-jaanu">
 <header>
   <div class="app-row">
     <img src="icon-192.png" alt="Jaanu">
@@ -449,6 +1139,203 @@
   <p class="small" id="notiHint"></p>
   <div class="btns"><button id="notiTest">Send test</button><button class="main" id="notiSave">Save</button></div>
 </div></div>
+
+
+</div>
+
+<div id="tab-manua" style="display:none">
+<main class="app-container" aria-label="Physical Therapy Rehabilitation Timer">
+    <div class="safety-note" role="note">⚠ Stop and rest if you feel sharp pain, or numbness / tingling down the leg. If pain keeps coming back, check with your doctor or physio.</div>
+    <div class="reminder-banner" id="reminder-banner" hidden>
+      <span id="reminder-banner-text">Time for your routine.</span>
+      <button type="button" class="chip-btn" id="reminder-start-btn">Start routine</button>
+      <button type="button" class="chip-btn" id="reminder-dismiss-btn">Later</button>
+    </div>
+    <!-- Top Progress Bar & Audio/Settings Toggles -->
+    <header>
+      <div class="header-top">
+        <span id="routine-counter">Cycle 1/1 • Exercise 1 of 5</span>
+        <div class="header-actions">
+          <button type="button" class="chip-btn active" id="voice-toggle-btn" aria-pressed="true">
+            🔊 Voice: ON
+          </button>
+          <button type="button" class="chip-btn active" id="beep-toggle-btn" aria-pressed="true">
+            🔔 Beeps: ON
+          </button>
+          <button type="button" class="chip-btn" id="settings-toggle-btn" aria-expanded="false">
+            ⚙️ Adjust Timers &amp; Cycles
+          </button>
+        </div>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress-bar-aria">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="header-top" style="font-size: 0.8rem;">
+        <span id="voice-status-text">Voice announcements ready</span>
+        <span id="progress-percent">0% Complete</span>
+      </div>
+    </header>
+
+    <!-- Collapsible Timer, Round, Cycle & Exercise Customizer -->
+    <section class="settings-panel" id="settings-panel" aria-label="Customize Timers, Sets, Reps, and Cycles">
+      <div class="settings-header">
+        <span class="settings-title">Customize Routine &amp; Timers</span>
+        <button type="button" class="chip-btn" id="restore-defaults-btn">Restore Defaults</button>
+      </div>
+
+      <!-- Global Cycle & Rest Controls -->
+      <div class="global-settings-grid">
+        <div class="setting-box">
+          <label>Routine Cycles</label>
+          <div class="stepper">
+            <button type="button" class="mini-step-btn" id="cycle-minus" aria-label="Decrease Routine Cycles">-</button>
+            <span class="stepper-val" id="cycle-val">1</span>
+            <button type="button" class="mini-step-btn" id="cycle-plus" aria-label="Increase Routine Cycles">+</button>
+          </div>
+        </div>
+        <div class="setting-box">
+          <label>Rest / Transition</label>
+          <div class="stepper">
+            <button type="button" class="mini-step-btn" id="rest-minus" aria-label="Decrease Rest Seconds">-</button>
+            <span class="stepper-val" id="rest-val">3s</span>
+            <button type="button" class="mini-step-btn" id="rest-plus" aria-label="Increase Rest Seconds">+</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Per-Exercise Sets, Reps, and Hold Controls -->
+      <div class="exercise-editor-list" id="exercise-editor-list"></div>
+
+      <!-- Add a New Exercise -->
+      <div class="add-exercise-form">
+        <div class="settings-title">Add Exercise</div>
+        <input type="text" id="new-ex-name" placeholder="New exercise name" maxlength="60" aria-label="New exercise name">
+        <div class="add-exercise-fields">
+          <label for="new-ex-sets">Sets</label>
+          <input type="number" id="new-ex-sets" value="1" min="1" max="10">
+          <label for="new-ex-reps">Reps</label>
+          <input type="number" id="new-ex-reps" value="10" min="1" max="50">
+          <label for="new-ex-hold">Hold (s)</label>
+          <input type="number" id="new-ex-hold" value="5" min="1" max="60">
+          <button type="button" class="btn" id="add-exercise-btn">+ Add exercise</button>
+        </div>
+      </div>
+
+      <!-- Reminder Settings (local only) -->
+      <div class="settings-header" style="border-bottom: none; padding-bottom: 0;">
+        <span class="settings-title">Reminders</span>
+      </div>
+      <div class="global-settings-grid">
+        <div class="setting-box">
+          <label>Morning reminder</label>
+          <div class="stepper">
+            <input type="time" id="reminder-morning-time" value="07:00" aria-label="Morning reminder time">
+            <button type="button" class="chip-btn" id="reminder-morning-toggle" aria-pressed="false">Off</button>
+          </div>
+        </div>
+        <div class="setting-box">
+          <label>Evening reminder</label>
+          <div class="stepper">
+            <input type="time" id="reminder-evening-time" value="18:00" aria-label="Evening reminder time">
+            <button type="button" class="chip-btn" id="reminder-evening-toggle" aria-pressed="false">Off</button>
+          </div>
+        </div>
+      </div>
+      <p class="settings-note">Reminders appear as a banner (and a notification, if allowed) while this app is open. True background reminders need a server and are not included — everything in this app stays on your phone.</p>
+
+      <!-- Backup & Restore (local JSON file) -->
+      <div class="settings-header" style="border-bottom: none; padding-bottom: 0;">
+        <span class="settings-title">Backup &amp; Restore</span>
+      </div>
+      <div class="backup-row">
+        <button type="button" class="btn" id="export-btn">Export backup (JSON)</button>
+        <button type="button" class="btn" id="import-btn">Import backup</button>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      </div>
+      <p class="settings-note">Export saves your routine, settings and history as a JSON file. Import restores it (replaces what is saved now).</p>
+    </section>
+
+    <!-- Central High-Contrast Display -->
+    <section class="display-area" id="display-card" aria-live="polite">
+      <h1 class="exercise-title" id="exercise-name">Standing Lumbar Extension</h1>
+      <p class="exercise-cue" id="exercise-cue"></p>
+
+      <div class="quick-adjust-bar">
+        <div class="badge" title="Current Routine Cycle">
+          Cycle <span id="cycle-display">1 / 1</span>
+        </div>
+        <div class="badge" title="Adjust Sets for current exercise">
+          Set <span id="set-display">1 / 1</span>
+          <button type="button" class="mini-step-btn" id="quick-set-minus" aria-label="Decrease sets for current exercise">-</button>
+          <button type="button" class="mini-step-btn" id="quick-set-plus" aria-label="Increase sets for current exercise">+</button>
+        </div>
+        <div class="badge" title="Adjust Reps for current exercise">
+          Rep <span id="rep-display">1 / 10</span>
+          <button type="button" class="mini-step-btn" id="quick-rep-minus" aria-label="Decrease reps for current exercise">-</button>
+          <button type="button" class="mini-step-btn" id="quick-rep-plus" aria-label="Increase reps for current exercise">+</button>
+        </div>
+        <div class="badge" title="Adjust Hold seconds for current exercise">
+          Hold <span id="hold-display">3s</span>
+          <button type="button" class="mini-step-btn" id="quick-hold-minus" aria-label="Decrease hold seconds">-</button>
+          <button type="button" class="mini-step-btn" id="quick-hold-plus" aria-label="Increase hold seconds">+</button>
+        </div>
+      </div>
+
+      <div class="timer-wrapper">
+        <div class="phase-label phase-idle" id="phase-label">READY</div>
+        <div class="countdown" id="timer-display">03s</div>
+      </div>
+    </section>
+
+    <div class="time-estimate" id="time-estimate" aria-live="polite"></div>
+
+    <!-- Large Mobile-Friendly Control Buttons -->
+    <section class="controls">
+      <button class="btn btn-primary" id="play-pause-btn" aria-label="Start or Pause Timer">
+        START ROUTINE
+      </button>
+      <button class="btn" id="next-btn" aria-label="Skip to Next Exercise">
+        Next Exercise &rarr;
+      </button>
+      <button class="btn btn-danger" id="reset-btn" aria-label="Reset Routine">
+        Reset
+      </button>
+    </section>
+
+    <!-- Interactive Exercise Routine Queue -->
+    <section class="routine-section" aria-label="Exercise Sequence">
+      <div class="routine-heading">Routine Queue (Tap any exercise to jump)</div>
+      <div class="routine-list" id="routine-list"></div>
+    </section>
+
+    <!-- Progress History -->
+    <section class="history-section" aria-label="Progress History">
+      <div class="routine-heading">Your Progress</div>
+      <div class="history-streak" id="history-streak">Day streak: 0 • Today: not done yet</div>
+      <div class="history-list" id="history-list"></div>
+      <details class="history-details">
+        <summary>Last 30 days</summary>
+        <div class="history-list" id="history-list-30"></div>
+      </details>
+    </section>
+  </main>
+</div>
+
+<div id="tab-summary" style="display:none">
+  <div class="sum-wrap">
+    <h2 class="sum-title">📋 ছামাৰী — আজি</h2>
+    <p class="sum-sub" id="sum-date"></p>
+    <div class="sum-card" id="sum-jaanu"></div>
+    <div class="sum-card" id="sum-manua"></div>
+    <p class="sum-note">জানুৰ আজিৰ check-in আৰু মনুৱাৰ PT routine — একেলগে।</p>
+  </div>
+</div>
+
+<nav id="tabbar" aria-label="App sections">
+  <button type="button" data-tab="jaanu" class="active" aria-current="page">💗 জানু</button>
+  <button type="button" data-tab="manua">💪 মনুৱা</button>
+  <button type="button" data-tab="summary">📋 ছামাৰী</button>
+</nav>
 
 <script>
 /* =====================================================================
@@ -1494,6 +2381,1265 @@ setInterval(checkMilestone, 30000);
 setInterval(() => { renderHeader(); }, 60000);
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
+<script>
+    /**
+     * 1. DEFAULT & EDITABLE EXERCISE ROUTINE SEQUENCE
+     */
+    /**
+     * 1. DEFAULT & EDITABLE EXERCISE ROUTINE SEQUENCE
+     * These defaults never change: they are the original 5 exercises.
+     * Any change the user makes is saved to localStorage and restored on load.
+     */
+    const DEFAULT_ROUTINE = [
+      { name: "Standing Lumbar Extension", sets: 1, reps: 10, hold: 3, cue: "Stand tall, hands on hips, gently lean back — hold, breathe normally." },
+      { name: "Prone Press-Up",            sets: 1, reps: 10, hold: 5, cue: "Lie face down, push up with arms, keep hips down on the floor." },
+      { name: "Glute Bridges",             sets: 2, reps: 10, hold: 5, cue: "Lie on your back, knees bent, lift hips until shoulders, hips and knees line up." },
+      { name: "Seated Chin Tucks",         sets: 1, reps: 10, hold: 5, cue: "Sit tall, gently pull your chin straight back, like making a double chin." },
+      { name: "Shoulder Blade Squeezes",   sets: 1, reps: 10, hold: 5, cue: "Sit tall, squeeze shoulder blades together and down — don't shrug." }
+    ];
+
+    let ROUTINE = JSON.parse(JSON.stringify(DEFAULT_ROUTINE));
+
+    const config = {
+      totalCycles: 1,      // Number of full routine cycles/rounds
+      restDuration: 3,     // Rest/Transition seconds between repetitions
+      voiceEnabled: true,  // Web Speech API spoken prompts
+      beepEnabled: true    // Web Audio API synthesized tones
+    };
+
+    /**
+     * 1b. PERSISTENCE (localStorage) — routine, settings, reminders, history.
+     * Everything is stored locally on this phone. No account, no cloud.
+     */
+    /* MERGE (Jaanu+Manua, v6): state ALSO syncs to the same Firebase project
+       (jaanu-ac156), collection manua_pt / doc amit, when online.
+       localStorage stays the offline fallback. NOTE: the live Firestore
+       rules end with a catch-all DENY — a `match /manua_pt/{doc}` rule must
+       be published in the Firebase console before cloud sync works; until
+       then writes fail silently and nothing breaks. */
+    const STORAGE_KEY = "pt-rehab-timer-v2";
+
+    const DEFAULT_REMINDERS = {
+      morning: { enabled: false, time: "07:00" },
+      evening: { enabled: false, time: "18:00" }
+    };
+
+    let reminders = JSON.parse(JSON.stringify(DEFAULT_REMINDERS));
+    let history = []; // [{ date: "YYYY-MM-DD", exercises: [names], sessions: n, durationSec: total }]
+
+    function clampNum(val, min, max, fallback) {
+      const n = Number(val);
+      if (!Number.isFinite(n)) return fallback;
+      return Math.min(max, Math.max(min, Math.round(n)));
+    }
+
+    function sanitizeRoutine(list) {
+      if (!Array.isArray(list) || list.length === 0) return null;
+      const cleaned = list
+        .filter(ex => ex && typeof ex.name === "string" && ex.name.trim())
+        .map(ex => ({
+          name: String(ex.name).trim().slice(0, 60),
+          sets: clampNum(ex.sets, 1, 10, 1),
+          reps: clampNum(ex.reps, 1, 50, 10),
+          hold: clampNum(ex.hold, 1, 60, 5),
+          cue: typeof ex.cue === "string" ? ex.cue.trim().slice(0, 140) : ""
+        }));
+      return cleaned.length > 0 ? cleaned : null;
+    }
+
+    function sanitizeState(saved) {
+      if (!saved || typeof saved !== "object") return null;
+      const routine = sanitizeRoutine(saved.routine);
+      if (!routine) return null;
+      const out = {
+        routine: routine,
+        config: { totalCycles: 1, restDuration: 3, voiceEnabled: true, beepEnabled: true },
+        reminders: JSON.parse(JSON.stringify(DEFAULT_REMINDERS)),
+        history: []
+      };
+      if (saved.config && typeof saved.config === "object") {
+        out.config.totalCycles = clampNum(saved.config.totalCycles, 1, 10, 1);
+        out.config.restDuration = clampNum(saved.config.restDuration, 1, 30, 3);
+        if (typeof saved.config.voiceEnabled === "boolean") out.config.voiceEnabled = saved.config.voiceEnabled;
+        if (typeof saved.config.beepEnabled === "boolean") out.config.beepEnabled = saved.config.beepEnabled;
+      }
+      if (saved.reminders && typeof saved.reminders === "object") {
+        for (const slot of ["morning", "evening"]) {
+          const r = saved.reminders[slot];
+          if (r && typeof r === "object") {
+            if (typeof r.enabled === "boolean") out.reminders[slot].enabled = r.enabled;
+            if (typeof r.time === "string" && /^\d{2}:\d{2}$/.test(r.time)) out.reminders[slot].time = r.time;
+          }
+        }
+      }
+      if (Array.isArray(saved.history)) {
+        out.history = saved.history
+          .filter(h => h && typeof h.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(h.date))
+          .map(h => ({
+            date: h.date,
+            exercises: Array.isArray(h.exercises) ? h.exercises.filter(x => typeof x === "string") : [],
+            sessions: clampNum(h.sessions, 1, 99, 1),
+            durationSec: clampNum(h.durationSec, 0, 100000, 0)
+          }))
+          .slice(-365);
+      }
+      return out;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          version: 2,
+          updatedAt: Date.now(),
+          routine: ROUTINE,
+          config: config,
+          reminders: reminders,
+          history: history
+        }));
+      } catch (err) {
+        console.warn("Could not save state:", err);
+      }
+      /* MERGE (Jaanu+Manua): notify the Firebase sync hook (defined in the
+         module script below). No-op until that script loads; localStorage
+         is always the source of truth. */
+      if (window.__manuaCloudSync) window.__manuaCloudSync();
+    }
+
+    function loadSavedState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const clean = sanitizeState(JSON.parse(raw));
+        if (!clean) return;
+        ROUTINE = clean.routine;
+        Object.assign(config, clean.config);
+        reminders = clean.reminders;
+        history = clean.history;
+      } catch (err) {
+        console.warn("Could not load saved state:", err);
+      }
+    }
+
+    // Restore the last-used routine and settings (defaults only on first run).
+    loadSavedState();
+
+    function getTotalRoutineReps() {
+      const singleCycleReps = ROUTINE.reduce((sum, ex) => sum + (ex.sets * ex.reps), 0);
+      return singleCycleReps * config.totalCycles;
+    }
+
+    /**
+     * 2. WEB AUDIO API SOUND GENERATOR & WEB SPEECH API ANNOUNCER
+     */
+    let audioCtx = null;
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    function playTone(freq, type, duration, delay = 0, peakGain = 0.2) {
+      if (!config.beepEnabled || !audioCtx) return;
+      const startTime = audioCtx.currentTime + delay;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    }
+
+    function playHoldStartCue() {
+      ensureAudioContext();
+      playTone(660, "sine", 0.18, 0, 0.25);
+    }
+
+    function playRestStartCue() {
+      ensureAudioContext();
+      playTone(440, "sine", 0.12, 0, 0.2);
+      playTone(440, "sine", 0.12, 0.16, 0.2);
+    }
+
+    function playSetCompleteCue() {
+      ensureAudioContext();
+      playTone(523.25, "triangle", 0.22, 0, 0.25);    // C5
+      playTone(659.25, "triangle", 0.22, 0.15, 0.25); // E5
+      playTone(783.99, "triangle", 0.45, 0.30, 0.30); // G5
+    }
+
+    /**
+     * Spoken Voice Announcements (Web Speech API)
+     * Speaks exercise names on change, "Hold", "Relax", and Set/Cycle transitions.
+     */
+    function speakAnnouncement(text, interrupt = true) {
+      const elVoiceStatus = document.getElementById("voice-status-text");
+      if (elVoiceStatus) {
+        elVoiceStatus.textContent = `Announcement: "${text}"`;
+      }
+      if (!config.voiceEnabled || !("speechSynthesis" in window)) return;
+
+      try {
+        // Some mobile/desktop browsers require voices to be loaded or cancel pending queues
+        const synth = window.speechSynthesis;
+        if (interrupt && synth.speaking) {
+          synth.cancel();
+        }
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.0;
+        
+        // Ensure standard voice selection if available
+        const voices = synth.getVoices();
+        if (voices && voices.length > 0) {
+          // Prefer English voice if available
+          const preferredVoice = voices.find(v => v.lang && v.lang.startsWith('en')) || voices[0];
+          if (preferredVoice) {
+            utterance.voice = preferredVoice;
+          }
+        }
+
+        synth.speak(utterance);
+      } catch (err) {
+        console.warn("Speech synthesis error:", err);
+      }
+    }
+
+    /**
+     * 3. APPLICATION STATE MACHINE
+     * Tracks current cycle, exercise, set, rep, phase ('IDLE' | 'HOLD' | 'REST' | 'COMPLETE'),
+     * and countdown seconds remaining.
+     */
+    const state = {
+      currentCycle: 1,
+      exerciseIndex: 0,
+      currentSet: 1,
+      currentRep: 1,
+      phase: "IDLE", // IDLE, HOLD, REST, COMPLETE
+      timeLeft: ROUTINE[0].hold,
+      phaseEnd: null, // deadline timestamp (ms) for the current HOLD/REST phase
+      sessionStartMs: null, // when the current routine session started
+      completedRepsTotal: 0,
+      isRunning: false,
+      timerId: null
+    };
+
+    // DOM Elements
+    const elRoutineCounter = document.getElementById("routine-counter");
+    const elProgressPercent = document.getElementById("progress-percent");
+    const elProgressFill = document.getElementById("progress-fill");
+    const elProgressBarAria = document.getElementById("progress-bar-aria");
+    const elDisplayCard = document.getElementById("display-card");
+    const elExerciseName = document.getElementById("exercise-name");
+    const elCycleDisplay = document.getElementById("cycle-display");
+    const elSetDisplay = document.getElementById("set-display");
+    const elRepDisplay = document.getElementById("rep-display");
+    const elHoldDisplay = document.getElementById("hold-display");
+    const elPhaseLabel = document.getElementById("phase-label");
+    const elTimerDisplay = document.getElementById("timer-display");
+    const elPlayPauseBtn = document.getElementById("play-pause-btn");
+    const elNextBtn = document.getElementById("next-btn");
+    const elResetBtn = document.getElementById("reset-btn");
+    const elRoutineList = document.getElementById("routine-list");
+    const elSettingsPanel = document.getElementById("settings-panel");
+    const elSettingsToggleBtn = document.getElementById("settings-toggle-btn");
+    const elVoiceToggleBtn = document.getElementById("voice-toggle-btn");
+    const elBeepToggleBtn = document.getElementById("beep-toggle-btn");
+    const elCycleVal = document.getElementById("cycle-val");
+    const elRestVal = document.getElementById("rest-val");
+    const elExerciseEditorList = document.getElementById("exercise-editor-list");
+
+    /**
+     * Transition helper: Calculates cumulative completed reps up to the current state
+     */
+    function recalculateCompletedReps() {
+      const singleCycleReps = ROUTINE.reduce((sum, ex) => sum + (ex.sets * ex.reps), 0);
+      let total = (state.currentCycle - 1) * singleCycleReps;
+      for (let i = 0; i < state.exerciseIndex; i++) {
+        total += ROUTINE[i].sets * ROUTINE[i].reps;
+      }
+      total += (state.currentSet - 1) * ROUTINE[state.exerciseIndex].reps;
+      total += (state.currentRep - 1);
+      state.completedRepsTotal = total;
+    }
+
+    /**
+     * Core State Machine Tick (Runs every 1000ms while active)
+     */
+    function tick() {
+      // Deadline-based countdown: the remaining time comes from the phase end
+      // timestamp, so the timer stays accurate even if the tab is throttled
+      // (e.g. screen dimmed) instead of drifting one second per tick.
+      if (state.phaseEnd) {
+        state.timeLeft = Math.max(0, Math.ceil((state.phaseEnd - Date.now()) / 1000));
+      }
+      if (state.timeLeft > 0) {
+        updateUI();
+        return;
+      }
+
+      const currentEx = ROUTINE[state.exerciseIndex];
+
+      // When a HOLD finishes -> evaluate rep, set, exercise, or cycle completion
+      if (state.phase === "HOLD") {
+        state.completedRepsTotal++;
+
+        const isLastRepInSet = state.currentRep >= currentEx.reps;
+        const isLastSetInEx = state.currentSet >= currentEx.sets;
+        const isLastExercise = state.exerciseIndex >= ROUTINE.length - 1;
+        const isLastCycle = state.currentCycle >= config.totalCycles;
+
+        // Check if entire routine across all cycles is finished
+        if (isLastRepInSet && isLastSetInEx && isLastExercise && isLastCycle) {
+          playSetCompleteCue();
+          speakAnnouncement("Routine complete! Great work.");
+          completeRoutine();
+          return;
+        }
+
+        // Play Set Complete chime if set ended, otherwise play double-beep for Rest
+        if (isLastRepInSet) {
+          playSetCompleteCue();
+          if (!isLastSetInEx) {
+            speakAnnouncement(`Set ${state.currentSet} complete. Rest, get ready for Set ${state.currentSet + 1}.`);
+          } else if (!isLastExercise) {
+            const nextExName = ROUTINE[state.exerciseIndex + 1].name;
+            speakAnnouncement(`${currentEx.name} complete. Next exercise: ${nextExName}.`);
+          } else {
+            const firstExName = ROUTINE[0].name;
+            speakAnnouncement(`Cycle ${state.currentCycle} complete! Starting Cycle ${state.currentCycle + 1} with ${firstExName}.`);
+          }
+        } else {
+          playRestStartCue();
+          speakAnnouncement("Relax");
+        }
+
+        // Enter Rest/Transition phase before the next rep
+        state.phase = "REST";
+        state.timeLeft = config.restDuration;
+        state.phaseEnd = Date.now() + config.restDuration * 1000;
+        updateUI();
+      }
+      // When a REST finishes -> advance to the next Rep, Set, Exercise, or Cycle and start HOLD
+      else if (state.phase === "REST") {
+        const isLastRepInSet = state.currentRep >= currentEx.reps;
+        const isLastSetInEx = state.currentSet >= currentEx.sets;
+        const isLastExercise = state.exerciseIndex >= ROUTINE.length - 1;
+        let exerciseChanged = false;
+
+        if (!isLastRepInSet) {
+          state.currentRep++;
+        } else if (!isLastSetInEx) {
+          state.currentSet++;
+          state.currentRep = 1;
+        } else if (!isLastExercise) {
+          state.exerciseIndex++;
+          state.currentSet = 1;
+          state.currentRep = 1;
+          exerciseChanged = true;
+        } else {
+          state.currentCycle++;
+          state.exerciseIndex = 0;
+          state.currentSet = 1;
+          state.currentRep = 1;
+          exerciseChanged = true;
+        }
+
+        const activeEx = ROUTINE[state.exerciseIndex];
+        state.phase = "HOLD";
+        state.timeLeft = activeEx.hold;
+        state.phaseEnd = Date.now() + activeEx.hold * 1000;
+        playHoldStartCue();
+
+        if (exerciseChanged) {
+          speakAnnouncement(`${activeEx.name}. Rep 1, Hold for ${activeEx.hold} seconds.`);
+        } else if (state.currentRep === 1) {
+          speakAnnouncement(`Set ${state.currentSet}, Rep 1. Hold.`);
+        } else {
+          speakAnnouncement(`Rep ${state.currentRep}, Hold.`);
+        }
+
+        updateUI();
+      }
+    }
+
+    function startTimer() {
+      ensureAudioContext();
+
+      if (state.phase === "COMPLETE") {
+        resetRoutine(false);
+      }
+
+      if (!state.isRunning) {
+        state.isRunning = true;
+
+        // If starting from IDLE, immediately enter the first HOLD phase and announce
+        if (state.phase === "IDLE") {
+          const currentEx = ROUTINE[state.exerciseIndex];
+          state.phase = "HOLD";
+          state.timeLeft = currentEx.hold;
+          state.phaseEnd = Date.now() + currentEx.hold * 1000;
+          if (!state.sessionStartMs) state.sessionStartMs = Date.now();
+          playHoldStartCue();
+          speakAnnouncement(`Starting ${currentEx.name}. Set ${state.currentSet}, Rep ${state.currentRep}. Hold for ${currentEx.hold} seconds.`);
+        } else {
+          // Resume: rebuild the deadline from the frozen timeLeft.
+          state.phaseEnd = Date.now() + Math.max(1, state.timeLeft) * 1000;
+          speakAnnouncement(`Resuming ${ROUTINE[state.exerciseIndex].name}.`);
+        }
+
+        state.timerId = setInterval(tick, 250);
+        requestWakeLock();
+        updateUI();
+      }
+    }
+
+    function pauseTimer(announcePause = true) {
+      if (state.isRunning) {
+        if (state.phaseEnd) {
+          state.timeLeft = Math.max(0, Math.ceil((state.phaseEnd - Date.now()) / 1000));
+        }
+        state.phaseEnd = null;
+        if (announcePause) {
+          speakAnnouncement("Timer paused.");
+        }
+      }
+      state.isRunning = false;
+      clearInterval(state.timerId);
+      state.timerId = null;
+      releaseWakeLock();
+      updateUI();
+    }
+
+    function togglePlayPause() {
+      if (state.isRunning) {
+        pauseTimer(true);
+      } else {
+        startTimer();
+      }
+    }
+
+    function completeRoutine() {
+      pauseTimer(false);
+      state.phase = "COMPLETE";
+      state.timeLeft = 0;
+      state.phaseEnd = null;
+      state.completedRepsTotal = getTotalRoutineReps();
+      const durationSec = state.sessionStartMs ? Math.max(0, Math.round((Date.now() - state.sessionStartMs) / 1000)) : 0;
+      state.sessionStartMs = null;
+      logCompletion(durationSec);
+      updateUI();
+    }
+
+    function jumpToExercise(index, announceJump = true) {
+      pauseTimer(false);
+      state.exerciseIndex = index;
+      state.currentSet = 1;
+      state.currentRep = 1;
+      state.phase = "IDLE";
+      state.timeLeft = ROUTINE[index].hold;
+      recalculateCompletedReps();
+      if (announceJump) {
+        const ex = ROUTINE[index];
+        speakAnnouncement(`Selected ${ex.name}. ${ex.sets} ${ex.sets > 1 ? "sets" : "set"} of ${ex.reps} reps, ${ex.hold} second hold.`);
+      }
+      updateUI();
+    }
+
+    function nextExercise() {
+      if (state.exerciseIndex < ROUTINE.length - 1) {
+        jumpToExercise(state.exerciseIndex + 1, true);
+      } else if (state.currentCycle < config.totalCycles) {
+        state.currentCycle++;
+        jumpToExercise(0, false);
+        speakAnnouncement(`Advancing to Cycle ${state.currentCycle}, ${ROUTINE[0].name}.`);
+        updateUI();
+      } else {
+        playSetCompleteCue();
+        speakAnnouncement("Routine complete! Great work.");
+        completeRoutine();
+      }
+    }
+
+    function resetRoutine(announce = true) {
+      pauseTimer(false);
+      state.sessionStartMs = null;
+      state.currentCycle = 1;
+      state.exerciseIndex = 0;
+      state.currentSet = 1;
+      state.currentRep = 1;
+      state.phase = "IDLE";
+      state.timeLeft = ROUTINE[0].hold;
+      state.completedRepsTotal = 0;
+      if (announce) {
+        speakAnnouncement(`Routine reset. Ready for ${ROUTINE[0].name}.`);
+      }
+      updateUI();
+    }
+
+    /**
+     * 4. DYNAMIC ADJUSTMENT HANDLERS (Cycles, Rest, Sets, Reps, Hold)
+     */
+    function adjustExerciseParam(exIndex, field, delta) {
+      const ex = ROUTINE[exIndex];
+      if (!ex) return;
+
+      const minVal = 1;
+      const maxVal = field === "hold" ? 60 : (field === "reps" ? 50 : 10);
+      ex[field] = Math.min(maxVal, Math.max(minVal, ex[field] + delta));
+
+      // Keep current active state within bounds if user edits the active exercise
+      if (exIndex === state.exerciseIndex) {
+        if (state.currentSet > ex.sets) state.currentSet = ex.sets;
+        if (state.currentRep > ex.reps) state.currentRep = ex.reps;
+        if (state.phase === "IDLE" && field === "hold") {
+          state.timeLeft = ex.hold;
+        }
+      }
+
+      recalculateCompletedReps();
+      saveState();
+      renderExerciseEditor();
+      updateUI();
+    }
+
+    function adjustCycles(delta) {
+      config.totalCycles = Math.min(10, Math.max(1, config.totalCycles + delta));
+      if (state.currentCycle > config.totalCycles) {
+        state.currentCycle = config.totalCycles;
+      }
+      recalculateCompletedReps();
+      saveState();
+      updateUI();
+    }
+
+    function adjustRestDuration(delta) {
+      config.restDuration = Math.min(30, Math.max(1, config.restDuration + delta));
+      if (state.phase === "REST" && state.timeLeft > config.restDuration) {
+        state.timeLeft = config.restDuration;
+        state.phaseEnd = Date.now() + config.restDuration * 1000;
+      }
+      saveState();
+      updateUI();
+    }
+
+    function restoreDefaults() {
+      ROUTINE = JSON.parse(JSON.stringify(DEFAULT_ROUTINE));
+      config.totalCycles = 1;
+      config.restDuration = 3;
+      config.voiceEnabled = true;
+      config.beepEnabled = true;
+      reminders = JSON.parse(JSON.stringify(DEFAULT_REMINDERS));
+      // History is a record of what was done — it is kept.
+      saveState();
+      resetRoutine(false);
+      speakAnnouncement("Default timers and exercise counts restored.");
+      renderExerciseEditor();
+      renderReminderSettings();
+      updateUI();
+    }
+
+    /**
+     * 5. UI RENDERING & ACCESSIBILITY UPDATES
+     */
+    function formatSeconds(sec) {
+      return String(sec).padStart(2, "0") + "s";
+    }
+
+    function renderExerciseEditor() {
+      elExerciseEditorList.innerHTML = "";
+      ROUTINE.forEach((ex, idx) => {
+        const row = document.createElement("div");
+        row.className = "exercise-edit-row";
+
+        // Name (rename) + move / remove
+        const head = document.createElement("div");
+        head.className = "exercise-edit-head";
+        const nameInput = document.createElement("input");
+        nameInput.type = "text";
+        nameInput.className = "ex-name-input";
+        nameInput.value = ex.name;
+        nameInput.maxLength = 60;
+        nameInput.setAttribute("aria-label", "Exercise name");
+        nameInput.addEventListener("change", () => {
+          const v = nameInput.value.trim();
+          if (v) {
+            ex.name = v.slice(0, 60);
+          } else {
+            nameInput.value = ex.name;
+          }
+          saveState();
+          updateUI();
+        });
+        head.appendChild(nameInput);
+        head.appendChild(smallBtn("↑", "Move exercise up", () => moveExercise(idx, -1)));
+        head.appendChild(smallBtn("↓", "Move exercise down", () => moveExercise(idx, 1)));
+        head.appendChild(smallBtn("✕", "Remove exercise", () => removeExercise(idx)));
+        row.appendChild(head);
+
+        // How-to cue (shown under the exercise name while exercising)
+        const cueInput = document.createElement("input");
+        cueInput.type = "text";
+        cueInput.className = "ex-cue-input";
+        cueInput.placeholder = "How to do it (short cue)";
+        cueInput.value = ex.cue || "";
+        cueInput.maxLength = 140;
+        cueInput.setAttribute("aria-label", "How to do this exercise");
+        cueInput.addEventListener("change", () => {
+          ex.cue = cueInput.value.trim().slice(0, 140);
+          saveState();
+          updateUI();
+        });
+        row.appendChild(cueInput);
+
+        // Sets / Reps / Hold steppers
+        const controls = document.createElement("div");
+        controls.className = "exercise-edit-controls";
+        controls.appendChild(stepperField("Sets", String(ex.sets), (d) => adjustExerciseParam(idx, "sets", d)));
+        controls.appendChild(stepperField("Reps", String(ex.reps), (d) => adjustExerciseParam(idx, "reps", d)));
+        controls.appendChild(stepperField("Hold (s)", ex.hold + "s", (d) => adjustExerciseParam(idx, "hold", d)));
+        row.appendChild(controls);
+
+        elExerciseEditorList.appendChild(row);
+      });
+    }
+
+    function updateUI() {
+      const currentEx = ROUTINE[state.exerciseIndex];
+      const totalReps = getTotalRoutineReps();
+
+      // Update Global Settings Labels
+      elCycleVal.textContent = config.totalCycles;
+      elRestVal.textContent = `${config.restDuration}s`;
+
+      // Progress calculation
+      const pct = totalReps > 0 ? Math.min(100, Math.round((state.completedRepsTotal / totalReps) * 100)) : 0;
+      elRoutineCounter.textContent = `Cycle ${state.currentCycle}/${config.totalCycles} • Exercise ${state.exerciseIndex + 1} of ${ROUTINE.length}`;
+      elProgressPercent.textContent = `${pct}% Complete`;
+      elProgressFill.style.width = `${pct}%`;
+      elProgressBarAria.setAttribute("aria-valuenow", pct);
+
+      // Exercise & Quick Adjust Badges
+      elExerciseName.textContent = state.phase === "COMPLETE" ? "Routine Complete!" : currentEx.name;
+      elCycleDisplay.textContent = `${state.currentCycle} / ${config.totalCycles}`;
+      elSetDisplay.textContent = `${state.currentSet} / ${currentEx.sets}`;
+      elRepDisplay.textContent = `${state.currentRep} / ${currentEx.reps}`;
+      elHoldDisplay.textContent = `${currentEx.hold}s`;
+
+      // Phase styling & Timer text
+      elDisplayCard.className = "display-area";
+      elPhaseLabel.className = "phase-label";
+
+      if (state.phase === "HOLD") {
+        elDisplayCard.classList.add("state-hold");
+        elPhaseLabel.classList.add("phase-hold");
+        elPhaseLabel.textContent = state.isRunning ? "HOLD POSITION" : "HOLD (PAUSED)";
+        elTimerDisplay.textContent = formatSeconds(state.timeLeft);
+      } else if (state.phase === "REST") {
+        elDisplayCard.classList.add("state-rest");
+        elPhaseLabel.classList.add("phase-rest");
+        elPhaseLabel.textContent = state.isRunning ? "REST / RELAX" : "REST (PAUSED)";
+        elTimerDisplay.textContent = formatSeconds(state.timeLeft);
+      } else if (state.phase === "COMPLETE") {
+        elDisplayCard.classList.add("state-done");
+        elPhaseLabel.classList.add("phase-hold");
+        elPhaseLabel.textContent = "GREAT WORK";
+        elTimerDisplay.textContent = "DONE";
+      } else {
+        elPhaseLabel.classList.add("phase-idle");
+        elPhaseLabel.textContent = "READY TO START";
+        elTimerDisplay.textContent = formatSeconds(currentEx.hold);
+      }
+
+      // Play/Pause Button State
+      if (state.phase === "COMPLETE") {
+        elPlayPauseBtn.textContent = "RESTART ROUTINE";
+        elPlayPauseBtn.classList.remove("running");
+      } else if (state.isRunning) {
+        elPlayPauseBtn.textContent = "PAUSE";
+        elPlayPauseBtn.classList.add("running");
+      } else {
+        elPlayPauseBtn.textContent = state.phase === "IDLE" ? "START ROUTINE" : "RESUME";
+        elPlayPauseBtn.classList.remove("running");
+      }
+
+      // Exercise how-to cue
+      const elCue = document.getElementById("exercise-cue");
+      if (elCue) elCue.textContent = currentEx.cue || "";
+
+      // Estimated total time (updates live as settings change)
+      const elEstimate = document.getElementById("time-estimate");
+      if (elEstimate) {
+        elEstimate.textContent = "Estimated time: ~" + formatDuration(estimateRoutineSeconds());
+      }
+
+      // Keep Voice / Beeps toggles in sync with the saved settings
+      syncToggleButtons();
+
+      renderRoutineList();
+    }
+
+    function renderRoutineList() {
+      elRoutineList.innerHTML = "";
+      ROUTINE.forEach((ex, idx) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "routine-item";
+        if (idx === state.exerciseIndex && state.phase !== "COMPLETE") {
+          item.classList.add("active");
+        } else if (idx < state.exerciseIndex || state.phase === "COMPLETE") {
+          item.classList.add("done");
+        }
+
+        const setLabel = ex.sets > 1 ? `${ex.sets} Sets × ${ex.reps} Reps` : `${ex.reps} Reps`;
+        item.innerHTML = `
+          <span class="routine-name">${idx + 1}. ${escapeHtml(ex.name)}</span>
+          <span class="routine-meta">${setLabel} • ${ex.hold}s hold</span>
+        `;
+
+        item.addEventListener("click", () => jumpToExercise(idx, true));
+        elRoutineList.appendChild(item);
+      });
+    }
+
+    /**
+     * 6. NEW IN V2 — helpers: history, backup, reminders, wake lock, routine editing.
+     */
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function todayKey(d) {
+      const dt = d || new Date();
+      const m = String(dt.getMonth() + 1).padStart(2, "0");
+      const day = String(dt.getDate()).padStart(2, "0");
+      return dt.getFullYear() + "-" + m + "-" + day;
+    }
+
+    function formatDuration(sec) {
+      sec = Math.max(0, Math.round(sec));
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      if (m === 0) return s + "s";
+      return s > 0 ? m + "m " + s + "s" : m + "m";
+    }
+
+    function estimateRoutineSeconds() {
+      const totalReps = getTotalRoutineReps();
+      if (totalReps === 0) return 0;
+      let holdSec = 0;
+      ROUTINE.forEach(ex => { holdSec += ex.sets * ex.reps * ex.hold; });
+      holdSec *= config.totalCycles;
+      const restSec = (totalReps - 1) * config.restDuration;
+      return holdSec + restSec;
+    }
+
+    // --- Day-wise log & streak ---
+    function logCompletion(durationSec) {
+      const key = todayKey();
+      const names = ROUTINE.map(ex => ex.name);
+      const existing = history.find(h => h.date === key);
+      if (existing) {
+        existing.exercises = names;
+        existing.sessions += 1;
+        existing.durationSec += durationSec;
+      } else {
+        history.push({ date: key, exercises: names, sessions: 1, durationSec: durationSec });
+      }
+      history.sort((a, b) => (a.date < b.date ? -1 : 1));
+      if (history.length > 365) history = history.slice(-365);
+      saveState();
+      renderHistory();
+    }
+
+    function computeStreak() {
+      if (history.length === 0) return 0;
+      const done = new Set(history.map(h => h.date));
+      let streak = 0;
+      const cursor = new Date();
+      if (!done.has(todayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+      while (done.has(todayKey(cursor))) {
+        streak++;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return streak;
+    }
+
+    function renderHistory() {
+      const elStreak = document.getElementById("history-streak");
+      const elList = document.getElementById("history-list");
+      const elList30 = document.getElementById("history-list-30");
+      if (!elStreak || !elList || !elList30) return;
+      const streak = computeStreak();
+      const today = todayKey();
+      const doneToday = history.some(h => h.date === today);
+      elStreak.textContent = "Day streak: " + streak + " • Today: " + (doneToday ? "done ✓" : "not done yet");
+      const byDate = {};
+      history.forEach(h => { byDate[h.date] = h; });
+      const fmtDate = (key) => {
+        const d = new Date(key + "T12:00:00");
+        return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+      };
+      elList.innerHTML = "";
+      for (let i = 0; i < 7; i++) {
+        const dt = new Date();
+        dt.setDate(dt.getDate() - i);
+        const key = todayKey(dt);
+        const h = byDate[key];
+        const row = document.createElement("div");
+        row.className = "history-item" + (h ? " done" : "");
+        const left = document.createElement("span");
+        left.textContent = fmtDate(key);
+        const right = document.createElement("span");
+        right.textContent = h ? "✓ " + h.exercises.length + " exercises • " + h.sessions + (h.sessions > 1 ? " sessions" : " session") + " • " + formatDuration(h.durationSec) : "—";
+        row.appendChild(left);
+        row.appendChild(right);
+        elList.appendChild(row);
+      }
+      elList30.innerHTML = "";
+      const sorted = history.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
+      if (sorted.length === 0) {
+        const row = document.createElement("div");
+        row.className = "history-item";
+        const span = document.createElement("span");
+        span.textContent = "No sessions logged yet — finish a routine and it will show up here.";
+        row.appendChild(span);
+        elList30.appendChild(row);
+      } else {
+        sorted.forEach(h => {
+          const row = document.createElement("div");
+          row.className = "history-item done";
+          const left = document.createElement("span");
+          left.textContent = fmtDate(h.date);
+          const right = document.createElement("span");
+          right.textContent = "✓ " + h.exercises.length + " exercises • " + formatDuration(h.durationSec);
+          row.appendChild(left);
+          row.appendChild(right);
+          elList30.appendChild(row);
+        });
+      }
+    }
+
+    // --- Backup: export / import (local JSON file only) ---
+    function exportData() {
+      const data = {
+        app: "pt-rehab-timer",
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        routine: ROUTINE,
+        config: config,
+        reminders: reminders,
+        history: history
+      };
+      const json = JSON.stringify(data, null, 2);
+      const a = document.createElement("a");
+      a.download = "pt-rehab-timer-backup-" + todayKey() + ".json";
+      if (window.URL && URL.createObjectURL) {
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        a.href = url;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } else {
+        // Fallback for environments without createObjectURL (very old browsers).
+        a.href = "data:application/json;charset=utf-8," + encodeURIComponent(json);
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    }
+
+    function importData(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(reader.result);
+          if (!data || data.app !== "pt-rehab-timer" || !Array.isArray(data.routine)) {
+            throw new Error("Not a PT Timer backup file.");
+          }
+          const clean = sanitizeState(data);
+          if (!clean) throw new Error("Backup has no valid routine.");
+          if (!window.confirm("Import this backup? Your current routine, settings and history will be replaced.")) return;
+          ROUTINE = clean.routine;
+          Object.assign(config, clean.config);
+          reminders = clean.reminders;
+          history = clean.history;
+          saveState();
+          resetRoutine(false);
+          renderExerciseEditor();
+          renderReminderSettings();
+          renderHistory();
+          updateUI();
+          speakAnnouncement("Backup imported.");
+        } catch (err) {
+          alert("That file is not a valid PT Timer backup.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // --- Wake lock (keeps the screen awake while a routine is running) ---
+    let wakeLock = null;
+
+    async function requestWakeLock() {
+      try {
+        if ("wakeLock" in navigator && state.isRunning) {
+          wakeLock = await navigator.wakeLock.request("screen");
+        }
+      } catch (err) {
+        // Unsupported or denied — the timer still works, the screen may sleep.
+      }
+    }
+
+    function releaseWakeLock() {
+      try {
+        if (wakeLock) {
+          wakeLock.release();
+          wakeLock = null;
+        }
+      } catch (err) {
+        // ignore
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && state.isRunning) requestWakeLock();
+    });
+
+    // --- Reminders (local only — they fire while the app is open) ---
+    const lastFired = { morning: "", evening: "" };
+
+    function renderReminderSettings() {
+      for (const slot of ["morning", "evening"]) {
+        const timeInput = document.getElementById("reminder-" + slot + "-time");
+        const toggle = document.getElementById("reminder-" + slot + "-toggle");
+        if (timeInput) timeInput.value = reminders[slot].time;
+        if (toggle) {
+          toggle.classList.toggle("active", reminders[slot].enabled);
+          toggle.setAttribute("aria-pressed", String(reminders[slot].enabled));
+          toggle.textContent = reminders[slot].enabled ? "On" : "Off";
+        }
+      }
+    }
+
+    function setReminder(slot, enabled) {
+      reminders[slot].enabled = enabled;
+      if (enabled && "Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+      saveState();
+      renderReminderSettings();
+    }
+
+    function checkReminders() {
+      const now = new Date();
+      const hhmm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+      const today = todayKey(now);
+      for (const slot of ["morning", "evening"]) {
+        if (!reminders[slot].enabled) continue;
+        if (reminders[slot].time !== hhmm) continue;
+        if (lastFired[slot] === today) continue;
+        lastFired[slot] = today;
+        fireReminder(slot);
+      }
+    }
+
+    function fireReminder(slot) {
+      const label = slot === "morning" ? "morning" : "evening";
+      const banner = document.getElementById("reminder-banner");
+      const text = document.getElementById("reminder-banner-text");
+      if (banner && text) {
+        text.textContent = "Time for your " + label + " routine.";
+        banner.hidden = false;
+      }
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification("PT Rehabilitation Timer", { body: "Time for your " + label + " routine." });
+        } catch (err) {
+          // ignore
+        }
+      }
+      speakAnnouncement("Time for your " + label + " routine.");
+    }
+
+    // --- Routine editing helpers ---
+    function smallBtn(label, ariaLabel, onClick) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "mini-step-btn";
+      b.textContent = label;
+      b.setAttribute("aria-label", ariaLabel);
+      b.addEventListener("click", onClick);
+      return b;
+    }
+
+    function stepperField(label, valueText, onDelta) {
+      const field = document.createElement("div");
+      field.className = "mini-field";
+      const span = document.createElement("span");
+      span.textContent = label;
+      const stepper = document.createElement("div");
+      stepper.className = "stepper";
+      const val = document.createElement("strong");
+      val.className = "stepper-val";
+      val.textContent = valueText;
+      stepper.appendChild(smallBtn("-", "Decrease " + label, () => onDelta(-1)));
+      stepper.appendChild(val);
+      stepper.appendChild(smallBtn("+", "Increase " + label, () => onDelta(1)));
+      field.appendChild(span);
+      field.appendChild(stepper);
+      return field;
+    }
+
+    function moveExercise(idx, delta) {
+      const to = idx + delta;
+      if (to < 0 || to >= ROUTINE.length) return;
+      const tmp = ROUTINE[idx];
+      ROUTINE[idx] = ROUTINE[to];
+      ROUTINE[to] = tmp;
+      if (state.exerciseIndex === idx) state.exerciseIndex = to;
+      else if (state.exerciseIndex === to) state.exerciseIndex = idx;
+      saveState();
+      renderExerciseEditor();
+      updateUI();
+    }
+
+    function removeExercise(idx) {
+      if (ROUTINE.length <= 1) {
+        alert("Keep at least one exercise in the routine.");
+        return;
+      }
+      if (!window.confirm('Remove "' + ROUTINE[idx].name + '" from the routine?')) return;
+      ROUTINE.splice(idx, 1);
+      if (state.exerciseIndex >= ROUTINE.length) state.exerciseIndex = ROUTINE.length - 1;
+      if (state.phase === "IDLE") state.timeLeft = ROUTINE[state.exerciseIndex].hold;
+      saveState();
+      renderExerciseEditor();
+      updateUI();
+    }
+
+    function addExercise() {
+      const nameInput = document.getElementById("new-ex-name");
+      const setsInput = document.getElementById("new-ex-sets");
+      const repsInput = document.getElementById("new-ex-reps");
+      const holdInput = document.getElementById("new-ex-hold");
+      const name = (nameInput.value || "").trim();
+      if (!name) {
+        alert("Give the new exercise a name first.");
+        nameInput.focus();
+        return;
+      }
+      ROUTINE.push({
+        name: name.slice(0, 60),
+        sets: clampNum(setsInput.value, 1, 10, 1),
+        reps: clampNum(repsInput.value, 1, 50, 10),
+        hold: clampNum(holdInput.value, 1, 60, 5),
+        cue: ""
+      });
+      nameInput.value = "";
+      saveState();
+      renderExerciseEditor();
+      updateUI();
+    }
+
+    function syncToggleButtons() {
+      elVoiceToggleBtn.classList.toggle("active", config.voiceEnabled);
+      elVoiceToggleBtn.setAttribute("aria-pressed", String(config.voiceEnabled));
+      elVoiceToggleBtn.textContent = config.voiceEnabled ? "🔊 Voice: ON" : "🔇 Voice: OFF";
+      elBeepToggleBtn.classList.toggle("active", config.beepEnabled);
+      elBeepToggleBtn.setAttribute("aria-pressed", String(config.beepEnabled));
+      elBeepToggleBtn.textContent = config.beepEnabled ? "🔔 Beeps: ON" : "🔕 Beeps: OFF";
+    }
+
+    // Main Control Event Listeners
+    elPlayPauseBtn.addEventListener("click", togglePlayPause);
+    elNextBtn.addEventListener("click", nextExercise);
+    elResetBtn.addEventListener("click", () => resetRoutine(true));
+
+    // Inline Quick Adjust Buttons for Current Exercise
+    document.getElementById("quick-set-minus").addEventListener("click", () => adjustExerciseParam(state.exerciseIndex, "sets", -1));
+    document.getElementById("quick-set-plus").addEventListener("click", () => adjustExerciseParam(state.exerciseIndex, "sets", 1));
+    document.getElementById("quick-rep-minus").addEventListener("click", () => adjustExerciseParam(state.exerciseIndex, "reps", -1));
+    document.getElementById("quick-rep-plus").addEventListener("click", () => adjustExerciseParam(state.exerciseIndex, "reps", 1));
+    document.getElementById("quick-hold-minus").addEventListener("click", () => adjustExerciseParam(state.exerciseIndex, "hold", -1));
+    document.getElementById("quick-hold-plus").addEventListener("click", () => adjustExerciseParam(state.exerciseIndex, "hold", 1));
+
+    // Global Cycle & Rest Stepper Listeners
+    document.getElementById("cycle-minus").addEventListener("click", () => adjustCycles(-1));
+    document.getElementById("cycle-plus").addEventListener("click", () => adjustCycles(1));
+    document.getElementById("rest-minus").addEventListener("click", () => adjustRestDuration(-1));
+    document.getElementById("rest-plus").addEventListener("click", () => adjustRestDuration(1));
+    document.getElementById("restore-defaults-btn").addEventListener("click", restoreDefaults);
+
+    // Toggle Customizer Panel
+    elSettingsToggleBtn.addEventListener("click", () => {
+      const isOpen = elSettingsPanel.classList.toggle("open");
+      elSettingsToggleBtn.classList.toggle("active", isOpen);
+      elSettingsToggleBtn.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    // Toggle Voice Announcements
+    elVoiceToggleBtn.addEventListener("click", () => {
+      config.voiceEnabled = !config.voiceEnabled;
+      elVoiceToggleBtn.classList.toggle("active", config.voiceEnabled);
+      elVoiceToggleBtn.setAttribute("aria-pressed", String(config.voiceEnabled));
+      elVoiceToggleBtn.textContent = config.voiceEnabled ? "🔊 Voice: ON" : "🔇 Voice: OFF";
+      if (config.voiceEnabled) {
+        speakAnnouncement("Voice announcements enabled.");
+      } else if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      saveState();
+    });
+
+    // Toggle Audio Beeps
+    elBeepToggleBtn.addEventListener("click", () => {
+      config.beepEnabled = !config.beepEnabled;
+      elBeepToggleBtn.classList.toggle("active", config.beepEnabled);
+      elBeepToggleBtn.setAttribute("aria-pressed", String(config.beepEnabled));
+      elBeepToggleBtn.textContent = config.beepEnabled ? "🔔 Beeps: ON" : "🔕 Beeps: OFF";
+      saveState();
+    });
+
+    // Reminder banner buttons
+    document.getElementById("reminder-start-btn").addEventListener("click", () => {
+      document.getElementById("reminder-banner").hidden = true;
+      startTimer();
+    });
+    document.getElementById("reminder-dismiss-btn").addEventListener("click", () => {
+      document.getElementById("reminder-banner").hidden = true;
+    });
+
+    // Reminder settings
+    document.getElementById("reminder-morning-toggle").addEventListener("click", () => setReminder("morning", !reminders.morning.enabled));
+    document.getElementById("reminder-evening-toggle").addEventListener("click", () => setReminder("evening", !reminders.evening.enabled));
+    document.getElementById("reminder-morning-time").addEventListener("change", (e) => {
+      reminders.morning.time = e.target.value;
+      saveState();
+    });
+    document.getElementById("reminder-evening-time").addEventListener("change", (e) => {
+      reminders.evening.time = e.target.value;
+      saveState();
+    });
+
+    // Backup & restore
+    document.getElementById("export-btn").addEventListener("click", exportData);
+    document.getElementById("import-btn").addEventListener("click", () => document.getElementById("import-file").click());
+    document.getElementById("import-file").addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) importData(file);
+      e.target.value = "";
+    });
+
+    // Add exercise
+    document.getElementById("add-exercise-btn").addEventListener("click", addExercise);
+
+    // Reminder checker — reminders fire while the app is open.
+    setInterval(checkReminders, 30000);
+    checkReminders();
+
+    // MERGE (Jaanu+Manua): PT's own service worker is NOT registered here —
+    // the merged app keeps Jaanu's PWA setup (manifest + sw.js) only.
+
+    // Initialize Editor & UI on load
+    renderExerciseEditor();
+    renderReminderSettings();
+    renderHistory();
+    updateUI();
+  </script>
+
+<script>
+/* ================= MERGE (Jaanu + Manua, v6): bottom tabs + Summary =================
+   Reads the REAL data of both apps (Jaanu: days/cycleInfo/computeStats;
+   Manua: history/todayKey/computeStreak). No placeholder data. */
+(function () {
+  var TABS = ['jaanu', 'manua', 'summary'];
+  function showTab(name) {
+    TABS.forEach(function (n) {
+      var el = document.getElementById('tab-' + n);
+      if (el) el.style.display = (n === name) ? '' : 'none';
+    });
+    var btns = document.querySelectorAll('#tabbar button');
+    for (var i = 0; i < btns.length; i++) {
+      var on = btns[i].getAttribute('data-tab') === name;
+      btns[i].classList.toggle('active', on);
+      if (on) btns[i].setAttribute('aria-current', 'page');
+      else btns[i].removeAttribute('aria-current');
+    }
+    window.scrollTo(0, 0);
+    if (name === 'summary') renderSummary();
+  }
+  window.showTab = showTab;
+  var btns = document.querySelectorAll('#tabbar button');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].addEventListener('click', function () { showTab(this.getAttribute('data-tab')); });
+  }
+
+  function fmtDay(iso) {
+    var d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  }
+  function renderSummary() {
+    var t = todayISO();
+    var dateEl = document.getElementById('sum-date');
+    if (dateEl) dateEl.textContent = 'আজি: ' + new Date(t + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    var j = document.getElementById('sum-jaanu');
+    if (j) {
+      var ci = null; try { ci = cycleInfo(); } catch (e) { ci = null; }
+      var d = (typeof days !== 'undefined' && days[t]) ? days[t] : {};
+      var st = null; try { st = computeStats(); } catch (e) { st = null; }
+      var h = '<h3>💗 জানু — আজি</h3>';
+      if (ci && ci.starts && ci.starts.length) {
+        var day = Math.round((new Date(t + 'T00:00:00') - new Date(ci.last + 'T00:00:00')) / DAY_MS) + 1;
+        h += '<p>🌸 Cycle day <b>' + day + '</b> · started ' + fmtDay(ci.last) + ' · typical ≈ ' + ci.med + ' days</p>';
+        h += '<p>🩸 Next period expected ≈ <b>' + fmtDay(ci.next) + '</b></p>';
+      } else {
+        h += '<p>🌸 Cycle: no period history yet.</p>';
+      }
+      h += '<p>💧 Water: <b>' + (d.water != null ? d.water : 0) + ' / 8 glasses</b>' + ((d.water || 0) >= 8 ? ' ✓' : '') + '</p>';
+      h += '<p>😴 Sleep: <b>' + (d.sleep != null ? d.sleep + ' hrs' : 'not logged') + '</b></p>';
+      h += '<p>🚶 Walk: <b>' + (d.walk ? 'done ✓' : 'not yet') + (d.walkMin ? ' · ' + d.walkMin + ' min' : '') + '</b></p>';
+      if (st) h += '<p>🔥 Streak: <b>' + st.streak + ' days</b> · ⭐ ' + st.stars + ' · Lv ' + st.level + ' ' + st.levelName + '</p>';
+      j.innerHTML = h;
+    }
+    var m = document.getElementById('sum-manua');
+    if (m) {
+      var streak = 0; try { streak = computeStreak(); } catch (e) { streak = 0; }
+      var tk = t; try { tk = todayKey(); } catch (e) { tk = t; }
+      var done = null;
+      try { done = history.find(function (x) { return x.date === tk; }); } catch (e) { done = null; }
+      var h2 = '<h3>💪 মনুৱা — আজি</h3>';
+      if (done) {
+        h2 += '<p>✅ PT routine <b>done ✓</b> · ' + done.sessions + (done.sessions > 1 ? ' sessions' : ' session') + '</p>';
+        h2 += '<p>Exercises: ' + done.exercises.map(function (x) { return escapeHtml(x); }).join(', ') + '</p>';
+      } else {
+        h2 += '<p>PT routine: <b>not done yet</b> — ' + ROUTINE.length + ' exercises waiting.</p>';
+      }
+      h2 += '<p>🔥 Day streak: <b>' + streak + '</b></p>';
+      m.innerHTML = h2;
+    }
+  }
+  window.renderSummary = renderSummary;
+})();
+</script>
 
 <script type="module">
 /* =====================================================================
@@ -1582,6 +3728,67 @@ try {
     }
   };
 
+
+  /* ================= MERGE (Jaanu + Manua, v6): Manua (Amit's PT) cloud sync ====
+     Same Firebase project (jaanu-ac156), SAME anonymous auth — but a
+     SEPARATE collection/doc: manua_pt / amit. Never touches jaanu_days
+     or jaanu_meta. localStorage (pt-rehab-timer-v2) stays the offline
+     fallback and the source of truth; cloud is a newer-wins backup.
+     RULES: the live rules end with `match /{document=**} { allow read,
+     write: if false; }`, so until this block is published in the Firebase
+     console (Firestore -> Rules, BEFORE the catch-all), every manua_pt
+     write/read fails with permission-denied — caught below, and the app
+     keeps working locally:
+         match /manua_pt/{doc} {
+           allow read: if request.auth != null;
+           allow create, update: if request.auth != null
+             && request.resource.data.get('updatedAt', null) is int
+             && request.resource.data.get('state', null) is map;
+           allow delete: if false;
+         }
+     ==================================================================== */
+  window.__manuaCloud = { ready: false };
+  const manuaLocalState = () => {
+    try { return JSON.parse(localStorage.getItem('pt-rehab-timer-v2') || 'null'); }
+    catch (e) { return null; }
+  };
+  window.__manuaCloudSave = async () => {
+    if (!window.__manuaCloud.ready) return;
+    try {
+      const st = manuaLocalState();
+      if (!st) return;
+      await setDoc(doc(db, 'manua_pt', 'amit'), {
+        state: st, updatedAt: st.updatedAt || Date.now(),
+        uid: auth.currentUser ? auth.currentUser.uid : null
+      }, { merge: true });
+    } catch (e) { /* offline / rules not published yet — local-first */ }
+  };
+  let __manuaSyncT = 0;
+  window.__manuaCloudSync = () => {
+    clearTimeout(__manuaSyncT);
+    __manuaSyncT = setTimeout(() => { window.__manuaCloudSave(); }, 2000);
+  };
+  window.__manuaCloudLoad = async () => {
+    if (!window.__manuaCloud.ready) return;
+    try {
+      const s = await getDoc(doc(db, 'manua_pt', 'amit'));
+      if (!s.exists()) return;
+      const cloud = s.data();
+      if (!cloud || !cloud.state) return;
+      const local = manuaLocalState();
+      if (!local || (cloud.updatedAt || 0) > (local.updatedAt || 0)) {
+        localStorage.setItem('pt-rehab-timer-v2', JSON.stringify(cloud.state));
+        try {
+          if (typeof loadSavedState === 'function') {
+            loadSavedState();
+            renderExerciseEditor(); renderReminderSettings(); renderHistory(); updateUI();
+          }
+          if (window.renderSummary) window.renderSummary();
+        } catch (e) { /* keep local state on screen */ }
+      }
+    } catch (e) { /* offline / rules not published yet — keep local */ }
+  };
+
   /* v5.6: re-read the day documents whenever the app comes back into view
      or back online — the live listener can go stale while the tab is frozen
      or the phone sleeps, so a missed day change would otherwise only appear
@@ -1595,6 +3802,8 @@ try {
     if (user){
       window.__jaanuCloud.ready = true;
       window.dispatchEvent(new Event('jaanu-cloud-ready'));
+      window.__manuaCloud.ready = true;
+      window.__manuaCloudLoad();
       /* LIVE sync: both phones see each other's changes instantly */
       try {
         onSnapshot(collection(db, 'jaanu_days'), snap => { if (window.__jaanuSyncOk) window.__jaanuSyncOk(); const out = {}; snap.forEach(x => { out[x.id] = x.data(); }); window.__jaanuCloud.mergeFromCloud(out); }, () => { if (window.__jaanuSyncFault) window.__jaanuSyncFault(); });
@@ -1610,6 +3819,7 @@ try {
      goes stale). */
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden && window.__jaanuCloud && window.__jaanuCloud.ready){ window.__jaanuCloud.getMeta(); refreshDays(); }
+    if (window.__manuaCloudLoad) window.__manuaCloudLoad();
   });
   window.addEventListener('online', () => {
     if (window.__jaanuCloud && window.__jaanuCloud.ready){ window.__jaanuCloud.getMeta(); refreshDays(); }
