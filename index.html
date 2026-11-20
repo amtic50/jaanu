@@ -289,9 +289,14 @@
 
 <style id="merge-tabs">
 /* ================= MERGE (Jaanu + Manua, v6): bottom tab system =================
-   Everything in this block is NEW. Jaanu's own <style> above is untouched. */
-#tab-manua{display:none}
-#tab-summary{display:none}
+   Everything in this block is NEW. Jaanu's own <style> above is untouched.
+   WARNING (20 Nov 2026 fix): NEVER put #tab-manua{display:none} or
+   #tab-summary{display:none} in this stylesheet. showTab() switches tabs by
+   clearing the INLINE display (''), which can never override a stylesheet
+   rule — the tab then stays hidden forever in a real browser. That blanked
+   the Summary tab (Manua only showed because a later PT rule sets it to
+   flex). The tab divs already carry inline style="display:none", so they
+   start hidden without any stylesheet rule. */
 #tabbar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;gap:8px;
   padding:10px 12px calc(10px + env(safe-area-inset-bottom));
   background:#fff;border-top:1px solid var(--line);
@@ -319,6 +324,8 @@ body{padding-bottom:152px;}
 .sum-card h3{margin:0 0 8px;font-size:16px;}
 .sum-card p{margin:6px 0;font-size:14.5px;}
 .sum-note{color:var(--muted);font-size:12.5px;text-align:center;}
+.sum-week-row{display:flex;justify-content:space-between;gap:8px;}
+.sum-week-row span:last-child{white-space:nowrap;}
 body.dark .sum-card{background:var(--card);color:var(--ink);border-color:var(--line);}
 body.dark .sum-title{color:var(--pink);}
 /* ---------- PT Timer styles, scoped to the Manua tab only ---------- */
@@ -1327,6 +1334,7 @@ body.dark .sum-title{color:var(--pink);}
     <p class="sum-sub" id="sum-date"></p>
     <div class="sum-card" id="sum-jaanu"></div>
     <div class="sum-card" id="sum-manua"></div>
+    <div class="sum-card" id="sum-week"></div>
     <p class="sum-note">জানুৰ আজিৰ check-in আৰু মনুৱাৰ PT routine — একেলগে।</p>
   </div>
 </div>
@@ -3594,47 +3602,125 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catc
   }
 
   function fmtDay(iso) {
-    var d = new Date(iso + 'T00:00:00');
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    /* Safe: an invalid date returns '—' instead of throwing RangeError
+       (toLocaleDateString on an Invalid Date throws and would blank the
+       whole Summary, since the cards are built as one string each). */
+    try {
+      var d = new Date(iso + 'T00:00:00');
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    } catch (e) { return '—'; }
+  }
+  /* A day counts as a Jaanu check-in only if the user actually logged
+     something. getDay() auto-creates a blank record for every plan day
+     (sleep defaults to 7, updatedAt 0), so mere existence of days[iso]
+     proves nothing. A real entry has updatedAt set by the save, or a
+     field the user touched. */
+  function hasJaanuCheckIn(rec) {
+    if (!rec) return false;
+    if (rec.updatedAt) return true;
+    return rec.gutka != null || rec.water != null || rec.walk || rec.food ||
+      rec.mood != null || (rec.note && rec.note.trim()) || (rec.gum || 0) > 0 ||
+      rec.alcohol === false || rec.period || rec.coffee != null || rec.walkMin != null;
   }
   function renderSummary() {
-    var t = todayISO();
+    /* Each card is built inside its own try/catch and always gets fallback
+       text, so one bad value can never blank the other card or the tab. */
+    var t;
+    try { t = todayISO(); } catch (e) { t = null; }
+    if (!t) return;
     var dateEl = document.getElementById('sum-date');
-    if (dateEl) dateEl.textContent = 'আজি: ' + new Date(t + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    if (dateEl) {
+      try { dateEl.textContent = 'আজি: ' + new Date(t + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); }
+      catch (e) { dateEl.textContent = 'আজি: ' + t; }
+    }
+    /* --- Jaanu card (today) --- */
     var j = document.getElementById('sum-jaanu');
     if (j) {
-      var ci = null; try { ci = cycleInfo(); } catch (e) { ci = null; }
-      var d = (typeof days !== 'undefined' && days[t]) ? days[t] : {};
-      var st = null; try { st = computeStats(); } catch (e) { st = null; }
-      var h = '<h3>💗 জানু — আজি</h3>';
-      if (ci && ci.starts && ci.starts.length) {
-        var day = Math.round((new Date(t + 'T00:00:00') - new Date(ci.last + 'T00:00:00')) / DAY_MS) + 1;
-        h += '<p>🌸 Cycle day <b>' + day + '</b> · started ' + fmtDay(ci.last) + ' · typical ≈ ' + ci.med + ' days</p>';
-        h += '<p>🩸 Next period expected ≈ <b>' + fmtDay(ci.next) + '</b></p>';
-      } else {
-        h += '<p>🌸 Cycle: no period history yet.</p>';
+      try {
+        var ci = null; try { ci = cycleInfo(); } catch (e) { ci = null; }
+        var d = (typeof days !== 'undefined' && days[t]) ? days[t] : {};
+        var st = null; try { st = computeStats(); } catch (e) { st = null; }
+        var h = '<h3>💗 জানু — আজি</h3>';
+        if (ci && ci.starts && ci.starts.length) {
+          var day = Math.round((new Date(t + 'T00:00:00') - new Date(ci.last + 'T00:00:00')) / DAY_MS) + 1;
+          h += '<p>🌸 Cycle day <b>' + (isNaN(day) ? '—' : day) + '</b> · started ' + fmtDay(ci.last) + ' · typical ≈ ' + (ci.med != null ? ci.med : '—') + ' days</p>';
+          h += '<p>🩸 Next period expected ≈ <b>' + fmtDay(ci.next) + '</b></p>';
+        } else {
+          h += '<p>🌸 Cycle: no period history yet.</p>';
+        }
+        h += '<p>💧 Water: <b>' + (d.water != null ? d.water : 0) + ' / 8 glasses</b>' + ((d.water || 0) >= 8 ? ' ✓' : '') + '</p>';
+        h += '<p>😴 Sleep: <b>' + (d.sleep != null ? d.sleep + ' hrs' : 'not logged') + '</b></p>';
+        h += '<p>🚶 Walk: <b>' + (d.walk ? 'done ✓' : 'not yet') + (d.walkMin ? ' · ' + d.walkMin + ' min' : '') + '</b></p>';
+        if (st) h += '<p>🔥 Streak: <b>' + (st.streak != null ? st.streak : '—') + ' days</b> · ⭐ ' + (st.stars != null ? st.stars : '—') + ' · Lv ' + (st.level != null ? st.level : '—') + ' ' + (st.levelName || '') + '</p>';
+        j.innerHTML = h;
+      } catch (e) {
+        j.innerHTML = '<h3>💗 জানু — আজি</h3><p>আজিৰ তথ্য দেখুৱাব পৰা নাই।</p>';
       }
-      h += '<p>💧 Water: <b>' + (d.water != null ? d.water : 0) + ' / 8 glasses</b>' + ((d.water || 0) >= 8 ? ' ✓' : '') + '</p>';
-      h += '<p>😴 Sleep: <b>' + (d.sleep != null ? d.sleep + ' hrs' : 'not logged') + '</b></p>';
-      h += '<p>🚶 Walk: <b>' + (d.walk ? 'done ✓' : 'not yet') + (d.walkMin ? ' · ' + d.walkMin + ' min' : '') + '</b></p>';
-      if (st) h += '<p>🔥 Streak: <b>' + st.streak + ' days</b> · ⭐ ' + st.stars + ' · Lv ' + st.level + ' ' + st.levelName + '</p>';
-      j.innerHTML = h;
     }
+    /* --- Manua card (today) --- */
     var m = document.getElementById('sum-manua');
     if (m) {
-      var streak = 0; try { streak = computeStreak(); } catch (e) { streak = 0; }
-      var tk = t; try { tk = todayKey(); } catch (e) { tk = t; }
-      var done = null;
-      try { done = history.find(function (x) { return x.date === tk; }); } catch (e) { done = null; }
-      var h2 = '<h3>💪 মনুৱা — আজি</h3>';
-      if (done) {
-        h2 += '<p>✅ PT routine <b>done ✓</b> · ' + done.sessions + (done.sessions > 1 ? ' sessions' : ' session') + '</p>';
-        h2 += '<p>Exercises: ' + done.exercises.map(function (x) { return escapeHtml(x); }).join(', ') + '</p>';
-      } else {
-        h2 += '<p>PT routine: <b>not done yet</b> — ' + ROUTINE.length + ' exercises waiting.</p>';
+      try {
+        var streak = 0; try { streak = computeStreak(); } catch (e) { streak = 0; }
+        var tk = t; try { tk = todayKey(); } catch (e) { tk = t; }
+        var done = null;
+        try { done = (typeof history !== 'undefined' && history) ? history.find(function (x) { return x.date === tk; }) : null; } catch (e) { done = null; }
+        var h2 = '<h3>💪 মনুৱা — আজি</h3>';
+        if (done) {
+          var nEx = (done.exercises && done.exercises.length) ? done.exercises.length : 0;
+          h2 += '<p>✅ PT routine <b>done ✓</b> · ' + (done.sessions || 1) + ((done.sessions || 1) > 1 ? ' sessions' : ' session') + '</p>';
+          if (nEx) h2 += '<p>Exercises: ' + done.exercises.map(function (x) { return escapeHtml(x); }).join(', ') + '</p>';
+        } else {
+          var rLen = (typeof ROUTINE !== 'undefined' && ROUTINE && ROUTINE.length) ? ROUTINE.length : 5;
+          h2 += '<p>PT routine: <b>not done yet</b> — ' + rLen + ' exercises waiting.</p>';
+        }
+        h2 += '<p>🔥 Day streak: <b>' + streak + '</b></p>';
+        m.innerHTML = h2;
+      } catch (e) {
+        m.innerHTML = '<h3>💪 মনুৱা — আজি</h3><p>আজিৰ তথ্য দেখুৱাব পৰা নাই।</p>';
       }
-      h2 += '<p>🔥 Day streak: <b>' + streak + '</b></p>';
-      m.innerHTML = h2;
+    }
+    /* --- Last 7 days, both — real local data only; a missing day shows '—'. --- */
+    var w = document.getElementById('sum-week');
+    if (w) {
+      try {
+        var h3 = '<h3>📅 শেষ 7 দিন — দুয়োৰে</h3>';
+        h3 += '<p><b>💗 জানু</b></p>';
+        var jCount = 0;
+        for (var i = 6; i >= 0; i--) {
+          var iso = isoOf(addDays(new Date(t + 'T00:00:00'), -i));
+          var rec = (typeof days !== 'undefined' && days[iso]) ? days[iso] : null;
+          if (hasJaanuCheckIn(rec)) {
+            jCount++;
+            var sc = null; try { sc = scoreDay(iso); } catch (e) { sc = null; }
+            var pct = (sc && typeof sc.total === 'number' && !isNaN(sc.total)) ? Math.min(100, sc.total) + '%' : '—';
+            h3 += '<p class="sum-week-row"><span>' + fmtDay(iso) + '</span><span>' + pct + ' · 🚶 ' + (rec.walk ? '✓' : '—') + ' · 💧 ' + (rec.water != null ? rec.water + '/8' : '—') + '</span></p>';
+          } else {
+            h3 += '<p class="sum-week-row"><span>' + fmtDay(iso) + '</span><span>—</span></p>';
+          }
+        }
+        h3 += '<p><b>💪 মনুৱা</b></p>';
+        var mCount = 0;
+        var hist = [];
+        try { hist = (typeof history !== 'undefined' && history) ? history : []; } catch (e) { hist = []; }
+        for (var k = 6; k >= 0; k--) {
+          var iso2 = isoOf(addDays(new Date(t + 'T00:00:00'), -k));
+          var ent = null;
+          try { ent = hist.find(function (x) { return x.date === iso2; }); } catch (e) { ent = null; }
+          if (ent) {
+            mCount++;
+            var nEx2 = (ent.exercises && ent.exercises.length) ? ent.exercises.length : 0;
+            h3 += '<p class="sum-week-row"><span>' + fmtDay(iso2) + '</span><span>✅ done · ' + nEx2 + ' exercises' + ((ent.sessions || 1) > 1 ? ' · ' + ent.sessions + ' sessions' : '') + '</span></p>';
+          } else {
+            h3 += '<p class="sum-week-row"><span>' + fmtDay(iso2) + '</span><span>—</span></p>';
+          }
+        }
+        h3 += '<p>🔥 এই সপ্তাহত: জানু <b>' + jCount + '/7</b> দিন check-in, মনুৱা <b>' + mCount + '/7</b> routine</p>';
+        w.innerHTML = h3;
+      } catch (e) {
+        w.innerHTML = '<h3>📅 শেষ 7 দিন — দুয়োৰে</h3><p>এই সপ্তাহৰ তথ্য দেখুৱাব পৰা নাই।</p>';
+      }
     }
   }
   window.renderSummary = renderSummary;
